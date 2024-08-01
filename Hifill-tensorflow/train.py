@@ -11,108 +11,72 @@ from utils import load_yml
 from trainer import HiTrainer, d_graph_deploy, get_batch, g_graph_deploy, get_input_queue
 import dataModule.ng as ng
 
-tf.compat.v1.disable_eager_execution()
-
-# 你的其餘代碼
-
-'''
-def parse_function(filename, img_shape):
-    image_string = tf.io.read_file(filename)
-    image = tf.image.decode_image(image_string, channels=3)
-    # image.set_shape(img_shape)  # Ensure the shape of the image is as expected
-    return image
-
-def random_crop_and_resize(image, crop_size, target_size):
-    cropped_image = tf.image.random_crop(image, size=crop_size)
-    #resized_image = tf.image.resize(cropped_image, target_size)
-    #print('cropped_image type:', cropped_image.shape)
-    return cropped_image
-
-def load_data(fnames, img_shape, random_crop=False, enqueue_size=32, queue_size=256, nthreads=4):
-    dataset = tf.data.Dataset.from_tensor_slices(fnames)
-    dataset = dataset.map(lambda x: parse_function(x, img_shape), num_parallel_calls=nthreads)
-
-    if random_crop:
-        crop_size = [img_shape[0], img_shape[1], 3]  # Define the crop size (height, width, channels)
-        dataset = dataset.map(
-            lambda image: random_crop_and_resize(image, crop_size, img_shape[:2]),
-            num_parallel_calls=nthreads
-        )
-
-    dataset = dataset.shuffle(buffer_size=queue_size)
-    dataset = dataset.batch(enqueue_size)
-    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-    return dataset
-
-def data_pipeline(fnames, img_shape, batch_size, random_crop=False, enqueue_size=32, queue_size=256, nthreads=4):
-    dataset = load_data(fnames, img_shape, random_crop, enqueue_size, queue_size, nthreads)
-
-    # Create an iterator
-    iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
-    imgs = iterator.get_next()
-
-    return imgs
-'''
-'''
-def parse_function(filename, img_shape):
-    image_string = tf.io.read_file(filename)
-    image = tf.image.decode_image(image_string, channels=3)
-    image.set_shape(img_shape)  # Ensure the shape of the image is as expected
-    return image
+# tf.compat.v1.disable_eager_execution()
 
 
-def random_crop_and_resize(image, crop_size, target_size):
-    cropped_image = tf.image.random_crop(image, size=crop_size)
-    resized_image = tf.image.resize(cropped_image, target_size)
-    return resized_image
-
-
-def load_data(fnames, img_shape, random_crop=False, enqueue_size=32, queue_size=256, nthreads=4):
-    dataset = tf.data.Dataset.from_tensor_slices(fnames)
-    dataset = dataset.map(lambda x: parse_function(x, img_shape), num_parallel_calls=nthreads)
-
-    if random_crop:
-        crop_size = [img_shape[0], img_shape[1], 3]  # Define the crop size (height, width, channels)
-        dataset = dataset.map(
-            lambda image: random_crop_and_resize(image, crop_size, img_shape[:2]),
-            num_parallel_calls=nthreads
-        )
-
-    dataset = dataset.shuffle(buffer_size=queue_size)
-    dataset = dataset.batch(enqueue_size)
-    dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-    return dataset
-'''
 if __name__ == "__main__":
+    # load config.yml file
     config = load_yml('config.yml')
     if config.GPU_ID != -1:
         gpu_ids = config.GPU_ID
     else:
         gpu_ids = [0]
-
+    
+    
     print('building networks and losses...')
     enq_ops = []
-    # load training data
+
+    '''    # load training data
     with open(config.TRAIN_LIST) as f:
         fnames = f.read().splitlines()
         endnd = (len(fnames) // config.BATCH_SIZE) * config.BATCH_SIZE
         fnames = fnames[:endnd]
         
-    #input_queue, enq_op = get_input_queue(fnames)
-    data = ng.DataFromFNames(fnames, config.IMG_SHAPE, random_crop=config.RANDOM_CROP, \
+    data = ng.DataFromFNames(fnames, config.IMG_SHAPE, random_crop=config.RANDOM_CROP,
                              enqueue_size=32, queue_size=256, nthreads=config.N_THREADS)
-    #enq_ops.append(enq_op)
-    #images = data.get_batch(input_queue, config)
+
 
     images =  data.data_pipeline(config.BATCH_SIZE) #from neuralgym
+    '''
+
+    # load training data
+    data_dir = config.TRAIN_LIST
+    data_dir = './data/examples/train/'
+    train_ds =  tf.keras.utils.image_dataset_from_directory(
+        data_dir,
+        labels=None,
+        validation_split=0.2,
+        subset="training",
+        seed=123,
+        shuffle=True,
+        image_size=(512, 512),
+        batch_size=config.BATCH_SIZE,
+        color_mode="rgb"
+    )
+    
+    val_ds = tf.keras.utils.image_dataset_from_directory(
+        data_dir,
+        labels=None,
+        validation_split=0.2,
+        subset="validation",
+        seed=123,
+        shuffle=True,
+        image_size=(512, 512),
+        batch_size=config.BATCH_SIZE,
+        color_mode="rgb"
+    )
+
     # image shape = (4, 512, 512, 3)
-    print("-----------images:",images.shape)
+    # print("-----------images:",images.shape)
     # images = data.batch(config.BATCH_SIZE) #from tensorflow
 
     # images = ng.data_pipeline(fnames, config.IMG_SHAPE, config.BATCH_SIZE, random_crop=config.RANDOM_CROP,
     #                       enqueue_size=32, queue_size=256, nthreads=config.N_THREADS)
     model = HinpaintModel()
-    g_vars, d_vars, losses = model.build_graph_with_losses(images, config=config)
+    AUTOTUNE = tf.data.AUTOTUNE
+
+    train_ds = train_ds.cache().prefetch(buffer_size=AUTOTUNE)
+    g_vars, d_vars, losses = model.build_graph_with_losses(train_ds, config=config)
 
     # validation graphs
     print('bbuilding validation graph...')
