@@ -38,6 +38,40 @@ def get_conv_op(conv_type):
         raise('wrong conv type ' + conv_type)
     return conv, deconv
 
+# Our model class
+class MyModel:
+    def __init__(self, name):
+        self.name = name
+
+    def build_generator(self):
+        # not implemented
+        # skip stage1
+        # return a tf.keras.Model
+        input = tf.keras.layers.Input(shape=(512, 512, 3))
+        # stage 1
+        # add masked image
+        masks
+        # stage 2
+
+
+
+        # sample output
+        output = tf.keras.layers.Conv2D(3, (3, 3), padding='same')(input)
+        return tf.keras.Model(inputs=input, outputs=output)
+        
+
+
+    def build_discriminator(self, x, reuse=False, training=True, nc=64):
+        raise NotImplementedError
+
+    def build_graph_with_losses(self, real, config, training=True, summary=False, reuse=False):
+        raise NotImplementedError
+
+    def build_static_graph(self, real, config, mask=None, name='val'):
+        raise NotImplementedError
+
+    def build_inference_graph(self, real, mask, config=None, reuse=False, is_training=False, dtype=tf.float32):
+        raise NotImplementedError
 
 class HinpaintModel:
     def __init__(self):
@@ -135,12 +169,10 @@ class HinpaintModel:
             x = dis_conv(x, nc*4, name='conv6', training=training)
             x = flatten(x, name='reshape')
             D = tf.compat.v1.layers.dense(x, 1, name='linear') # old one
-            #D = tf.keras.layers.Dense(1, name='linear')(x)
+            D = tf.keras.layers.Dense(1, name='linear')(x)
             return D
 
     def build_graph_with_losses(self, real, config, training=True, summary=False, reuse=False):
-
-
         """
         def preprocess_image(image):
             # 正则化图像数据

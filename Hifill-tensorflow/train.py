@@ -74,6 +74,8 @@ if __name__ == "__main__":
     #                       enqueue_size=32, queue_size=256, nthreads=config.N_THREADS)
     model = HinpaintModel()
 
+    
+
     g_vars, d_vars, losses = model.build_graph_with_losses(train_ds, config=config)
 
     # validation graphs
