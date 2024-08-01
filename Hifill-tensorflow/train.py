@@ -73,35 +73,14 @@ if __name__ == "__main__":
     # images = ng.data_pipeline(fnames, config.IMG_SHAPE, config.BATCH_SIZE, random_crop=config.RANDOM_CROP,
     #                       enqueue_size=32, queue_size=256, nthreads=config.N_THREADS)
     model = HinpaintModel()
-    AUTOTUNE = tf.data.AUTOTUNE
 
-    train_ds = train_ds.cache().prefetch(buffer_size=AUTOTUNE)
     g_vars, d_vars, losses = model.build_graph_with_losses(train_ds, config=config)
 
     # validation graphs
     print('bbuilding validation graph...')
-    if config.VAL:
-        with open(config.VAL_LIST) as f:
-            val_fnames = f.read().splitlines()
-        #inq, enq_op = get_input_queue(val_fnames)
-        #val_images = get_batch(inq, config)
-        data_val = ng.DataFromFNames(val_fnames, config.IMG_SHAPE, random_crop=config.RANDOM_CROP,
-                                          enqueue_size=32, queue_size=256, nthreads=1)
-        val_images =  data_val.data_pipeline(config.BATCH_SIZE)
-        val_results = model.build_static_graph(
-                val_images, config, name='val/' )
-        #enq_ops.append(enq_op)
+  
+    test_results = model.build_static_graph(val_images, config, name='test/')
 
-        with open(config.TEST_LIST) as f:
-            val_fnames = f.read().splitlines()
-        #inq, enq_op = get_input_queue(val_fnames)
-        #val_images = get_batch(inq, config)
-        data_val = ng.DataFromFNames(val_fnames, config.IMG_SHAPE, random_crop=config.RANDOM_CROP,
-                                          enqueue_size=32, queue_size=256, nthreads=1)
-        val_images =  data_val.data_pipeline(config.BATCH_SIZE)
-        test_results = model.build_static_graph(
-                val_images, config, name='test/')
-        #enq_ops.append(enq_op)
 
     # training settings
     lr = tf.compat.v1.get_variable('lr', shape=[], trainable=False, dtype=tf.float32,

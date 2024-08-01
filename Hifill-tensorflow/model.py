@@ -134,8 +134,8 @@ class HinpaintModel:
             x = dis_conv(x, nc*4, name='conv5', training=training)
             x = dis_conv(x, nc*4, name='conv6', training=training)
             x = flatten(x, name='reshape')
-            # D = tf.compat.v1.layers.dense(x, 1, name='linear') # old one
-            D = tf.keras.layers.Dense(1, name='linear')(x)
+            D = tf.compat.v1.layers.dense(x, 1, name='linear') # old one
+            #D = tf.keras.layers.Dense(1, name='linear')(x)
             return D
 
     def build_graph_with_losses(self, real, config, training=True, summary=False, reuse=False):
