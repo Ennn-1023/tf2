@@ -105,6 +105,8 @@ if __name__ == "__main__":
     #images = data.get_batch(input_queue, config)
 
     images =  data.data_pipeline(config.BATCH_SIZE) #from neuralgym
+    # image shape = (4, 512, 512, 3)
+    print("-----------images:",images.shape)
     # images = data.batch(config.BATCH_SIZE) #from tensorflow
 
     # images = ng.data_pipeline(fnames, config.IMG_SHAPE, config.BATCH_SIZE, random_crop=config.RANDOM_CROP,
