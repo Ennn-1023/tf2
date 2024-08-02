@@ -54,14 +54,10 @@ def random_interpolates(pos, neg):
     return X_hat
 
 
-import tensorflow as tf
-from tensorflow.keras import layers
-
-
 def conv2d(x, output_dim, ksize, stride, dilation_rate=1, activation=None, padding='same', name='conv',
            dtype=tf.float32):
     # 使用 Keras 的 Conv2D 層來替代自定義的卷積操作
-    conv_layer = layers.Conv2D(
+    conv_layer = tf.keras.layers.Conv2D(
         filters=output_dim,
         kernel_size=ksize,
         strides=stride,

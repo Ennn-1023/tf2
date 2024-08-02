@@ -38,40 +38,6 @@ def get_conv_op(conv_type):
         raise('wrong conv type ' + conv_type)
     return conv, deconv
 
-# Our model class
-class MyModel:
-    def __init__(self, name):
-        self.name = name
-
-    def build_generator(self):
-        # not implemented
-        # skip stage1
-        # return a tf.keras.Model
-        input = tf.keras.layers.Input(shape=(512, 512, 3))
-        # stage 1
-        # add masked image
-        masks
-        # stage 2
-
-
-
-        # sample output
-        output = tf.keras.layers.Conv2D(3, (3, 3), padding='same')(input)
-        return tf.keras.Model(inputs=input, outputs=output)
-        
-
-
-    def build_discriminator(self, x, reuse=False, training=True, nc=64):
-        raise NotImplementedError
-
-    def build_graph_with_losses(self, real, config, training=True, summary=False, reuse=False):
-        raise NotImplementedError
-
-    def build_static_graph(self, real, config, mask=None, name='val'):
-        raise NotImplementedError
-
-    def build_inference_graph(self, real, mask, config=None, reuse=False, is_training=False, dtype=tf.float32):
-        raise NotImplementedError
 
 class HinpaintModel:
     def __init__(self):
@@ -119,9 +85,12 @@ class HinpaintModel:
             x.set_shape(x_in.get_shape().as_list())
             x1 = x
             x_coarse = x * mask_batch + x_in * (1.-mask_batch)
+            # shape?
+
 
             # stage-2
             xnow = tf.concat([x_coarse, mask_batch], axis=3)
+            print('________________xnow', xnow)
             activations = [x_coarse]
             # encoder
             sz_t = sz
@@ -184,11 +153,14 @@ class HinpaintModel:
         """
 
         print(real)
-        real = real / 127.5 - 1. # old one
+        #real = real / 127.5 - 1. # old one
 
-        mask = random_mask(config, name='mask_input')
+        # mask = random_mask(config, name='mask_input')
+        mask = tf.ones(config.IMG_SHAPE[0:3]+[1], dtype=tf.float32)
+
         #print('real type', type(real))
-        x = real * (1.-mask)
+        # x = real * (1.-mask)
+        x = tf.multiply(real, (1. - mask))
         x1, x2, offset_flow = self.build_generator(
             x, mask, config, reuse=reuse, training=training)
         fake = x2
