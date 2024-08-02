@@ -81,23 +81,24 @@ def conv2d(x, output_dim, ksize, stride, dilation_rate=1, activation=None, paddi
 
 def conv2d_ds(x, output_dim, ksize, stride, dilation_rate=1, activation=None, \
                         padding='SAME', name='conv', dtype=tf.float32):
-    with tf.compat.v1.variable_scope(name):
-      nc = x.get_shape().as_list()[-1]
-      #depthwise_filter = tf.get_variable('dw', [3, 3, nc, 1], dtype = dtype, \
-      #                 initializer=tf.truncated_normal_initializer(stddev=0.05))
-      pointwise_filter = tf.compat.v1.get_variable('pw', [1, 1, nc, output_dim], dtype = dtype, \
-                       initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.05))
-      #y = tf.nn.separable_conv2d(x, depthwise_filter, pointwise_filter, \
-      #            strides = [1, stride, stride, 1], padding = 'SAME', rate=[dilation_rate, dilation_rate])
-      y = tf.nn.conv2d(x, pointwise_filter, strides = [1, stride, stride, 1], padding='SAME', \
-                 dilations = [1, 1, 1, 1]) 
-      biases = tf.compat.v1.get_variable('ds_biases', [output_dim], \
-                      dtype=dtype, initializer=tf.constant_initializer(0.0))
-      y = tf.reshape(tf.nn.bias_add(y, biases), y.get_shape())
-      if activation is None:
-            return y
-      else:
-            return activation(y)
+    # 使用 Keras 的 SeparableConv2D 進行深度可分離卷積
+    conv_layer = layers.SeparableConv2D(
+        filters=output_dim,
+        kernel_size=ksize,
+        strides=stride,
+        dilation_rate=dilation_rate,
+        padding=padding,
+        activation=activation,
+        depthwise_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.05),
+        pointwise_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.05),
+        bias_initializer=tf.keras.initializers.Constant(0.0),
+        name=name,
+        dtype=dtype
+    )
+
+    # 將輸入 x 通過 SeparableConv2D 層進行卷積操作
+    y = conv_layer(x)
+    return y
 
 
 @add_arg_scope
@@ -150,27 +151,29 @@ def gen_deconv(x, cnum, name='upsample', padding='SAME', training=True, dtype=tf
 
 @add_arg_scope
 def gen_deconv_gated(x, cnum, name='upsample', padding='SAME', training=True, dtype=tf.float32):
-    with tf.variable_scope(name):
-        x = resize(x, func=tf.image.resize_bilinear)
-        x = gen_conv_gated( x, cnum, 3, 1, name=name+'_conv', padding=padding,
-            training=training, activation=None, dtype=dtype)
+    x = tf.image.resize(x, size=[x.shape[1] * 2, x.shape[2] * 2], method='bilinear')
+    #with tf.variable_scope(name):
+    #   x = resize(x, func=tf.image.resize_bilinear)
+    x = gen_conv_gated( x, cnum, 3, 1, name=name+'_conv', padding=padding,
+        training=training, activation=None, dtype=dtype)
     return x
 
 @add_arg_scope
 def gen_deconv_gated_ds(x, cnum, name='upsample', padding='SAME', training=True, dtype=tf.float32):
-    with tf.compat.v1.variable_scope(name):
-        x = resize(x, func=tf.compat.v1.image.resize_bilinear)
-        x = gen_conv_gated_ds( x, cnum, 3, 1, name=name+'_conv', padding=padding,
-            training=training, dtype=dtype)
+    x = tf.image.resize(x, size=[x.shape[1] * 2, x.shape[2] * 2], method='bilinear')
+    #x = resize(x, func=tf.compat.v1.image.resize_bilinear)
+    x = gen_conv_gated_ds( x, cnum, 3, 1, name=name+'_conv', padding=padding,
+        training=training, dtype=dtype)
     return x
 
 
 @add_arg_scope
 def gen_deconv_gated_slice(x, cnum, name='upsample', padding='SAME', training=True, dtype=tf.float32):
-    with tf.compat.v1.variable_scope(name):
-        x = resize(x, func=tf.compat.v1.image.resize_bilinear)
-        x = gen_conv_gated_slice(  x, cnum, 3, 1, name=name+'_conv', padding=padding,
-            training=training, dtype=dtype)
+    #with tf.compat.v1.variable_scope(name):
+        #x = resize(x, func=tf.compat.v1.image.resize_bilinear)
+    x = tf.image.resize(x, size=[x.shape[1] * 2, x.shape[2] * 2], method='bilinear')
+    x = gen_conv_gated_slice(  x, cnum, 3, 1, name=name+'_conv', padding=padding,
+        training=training, dtype=dtype)
     return x
 
 @add_arg_scope
