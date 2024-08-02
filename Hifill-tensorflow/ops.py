@@ -52,19 +52,25 @@ def random_interpolates(pos, neg):
     X_hat = pos + epsilon * (neg - pos)
     return X_hat
 
-def conv2d(x, output_dim, ksize, stride, dilation_rate=1, activation=None, padding='SAME', name='conv', dtype=tf.float32):
-    with tf.compat.v1.variable_scope(name):
-        w = tf.compat.v1.get_variable('w', [ksize, ksize, x.get_shape().as_list()[-1], output_dim],
-                            dtype=dtype, initializer=tf.compat.v1.truncated_normal_initializer(stddev=0.05))
-        conv = tf.nn.conv2d(x, w, strides=[1, stride, stride, 1], padding=padding, \
-                       dilations = [1, dilation_rate, dilation_rate, 1])
-        biases = tf.compat.v1.get_variable('biases', [output_dim], \
-                      dtype=dtype, initializer=tf.constant_initializer(0.0))
-        conv = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape())
-        if activation is None:
-            return conv
-        else:
-            return activation(conv)
+def conv2d(x, output_dim, ksize, stride, dilation_rate=1, activation=None, padding='same', name='conv',
+           dtype=tf.float32):
+    # 使用 Keras 的 Conv2D 層來替代自定義的卷積操作
+    conv_layer = tf.keras.layers.Conv2D(
+        filters=output_dim,
+        kernel_size=ksize,
+        strides=stride,
+        dilation_rate=dilation_rate,
+        activation=activation,  # 激活函數
+        padding=padding,
+        name=name,
+        dtype=dtype,
+        kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.05),  # 權重初始化
+        bias_initializer=tf.keras.initializers.Constant(0.0)  # 偏置初始化
+    )
+
+    # 將輸入 x 通過 Conv2D 層進行卷積操作
+    conv = conv_layer(x)
+    return conv
 
 
 def conv2d_ds(x, output_dim, ksize, stride, dilation_rate=1, activation=None, \
