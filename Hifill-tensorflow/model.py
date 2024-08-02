@@ -1,7 +1,7 @@
 import cv2
 import scipy.ndimage
 import tensorflow as tf
-from tf_slim import arg_scope
+from tensorflow.keras import layers
 
 from ops import scalar_summary, images_summary
 from ops import gradients_summary
@@ -17,7 +17,7 @@ from ops import resize_like, contextual_attention
 from ops import apply_attention, dilate_block, residual_block, apply_contextual_attention
 from ops import filter_gaussian, dilate_block2
 
-from easydict import EasyDict as edict
+#from easydict import EasyDict as edict
 
 def get_conv_op(conv_type):
     #gen_conv = ops.GenConvGated()
