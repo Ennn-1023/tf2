@@ -1,6 +1,6 @@
-from tensorflow import keras
 import tensorflow as tf
-from tensorflow.keras import layers
+from tensorflow import keras
+from keras import layers
 
 
 def gen_conv(x, cnum, ksize, stride=1, rate=1, name='conv',
