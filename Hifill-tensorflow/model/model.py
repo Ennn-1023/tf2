@@ -30,10 +30,3 @@ class MyModel:
         model.add(Discriminator_block(nc=nc, training=training))
         return model
         
-    
-
-    def build_static_graph(self, real, config, mask=None, name='val'):
-        raise NotImplementedError
-
-    def build_inference_graph(self, real, mask, config=None, reuse=False, is_training=False, dtype=tf.float32):
-        raise NotImplementedError
