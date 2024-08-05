@@ -105,6 +105,3 @@ class Trainer:
             print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
     
 
-        
-        
-            
