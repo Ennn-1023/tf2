@@ -85,6 +85,11 @@ class MyModel:
             return x2, offset_flow
         else:
             return x2, match, offset_flow
+
+        def build_discriminator(self, training=True, nc=64):
+            model = tf.keras.Sequential()
+            model.add(Discriminator_block(nc=nc, training=training))
+            return model
 """
         # sample output
         output = tf.keras.layers.Conv2D(3, (3, 3), padding='same')(x)
@@ -94,8 +99,5 @@ class MyModel:
         
 
 
-    def build_discriminator(self, training=True, nc=64):
-        model = tf.keras.Sequential()
-        model.add(Discriminator_block(nc=nc, training=training))
-        return model
+
         
