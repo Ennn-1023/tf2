@@ -4,6 +4,7 @@ from tensorflow import keras
 import numpy as np
 import time
 
+
 def gan_wgan_loss(pos, neg, name='gan_loss'):
     d_loss = tf.reduce_mean(neg) - tf.reduce_mean(pos)
     g_loss = -tf.reduce_mean(neg)
@@ -87,7 +88,7 @@ class Trainer:
         self.model.discriminator.save_weights(dir_path + '/discriminator')
 
 
-    def train(self, dataset, epochs):
+    def train(self, dataset, epochs, continue_training = False):
         checkpoint_dir = './training_checkpoints'
         checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
         
@@ -104,3 +105,6 @@ class Trainer:
             print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
     
 
+        
+        
+            
