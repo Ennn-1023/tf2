@@ -79,7 +79,6 @@ class Trainer:
             
             grad_gen = gen_tape.gradient(losses['g_loss'], self.model.generator.trainable_variables)
             grad_dis = dis_tape.gradient(losses['d_loss'], self.model.discriminator.trainable_variables)
-            
             self.gen_optimizer.apply_gradients(zip(grad_gen, self.model.generator.trainable_variables))
             self.dis_optimizer.apply_gradients(zip(grad_dis, self.model.discriminator.trainable_variables))
 

@@ -81,15 +81,14 @@ class MyModel:
                 x = tf.concat([x_att, x], axis=3)
         x = deconv2(x, 3, name='re_de_toRGB__'+str(sz_t))
         x2 = tf.clip_by_value(x, -1., 1.)
-        if training:
-            return x2, offset_flow
-        else:
-            return x2, match, offset_flow
+        
+        return tf.keras.Model(inputs=[img_input, mask_input], outputs=x2)
 
-        def build_discriminator(self, training=True, nc=64):
-            model = tf.keras.Sequential()
-            model.add(Discriminator_block(nc=nc, training=training))
-            return model
+    def build_discriminator(self, training=True, nc=64):
+        model = tf.keras.Sequential()
+        model.add(Discriminator_block(nc=nc, training=training))
+        return model
+
 """
         # sample output
         output = tf.keras.layers.Conv2D(3, (3, 3), padding='same')(x)
