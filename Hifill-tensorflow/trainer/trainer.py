@@ -82,15 +82,14 @@ class Trainer:
             self.gen_optimizer.apply_gradients(zip(grad_gen, self.model.generator.trainable_variables))
             self.dis_optimizer.apply_gradients(zip(grad_dis, self.model.discriminator.trainable_variables))
 
+    def save(self, dir_path):
+        self.model.generator.save_weights(dir_path + '/generator')
+        self.model.discriminator.save_weights(dir_path + '/discriminator')
 
 
     def train(self, dataset, epochs):
         checkpoint_dir = './training_checkpoints'
         checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-        checkpoint = tf.train.Checkpoint(generator_optimizer=self.gen_optimizer,
-                                 discriminator_optimizer=self.dis_optimizer,
-                                 generator=self.generator,
-                                 discriminator=self.discriminator)
         
         for epoch in range(epochs):
             start = time.time()
@@ -100,7 +99,7 @@ class Trainer:
 
             # Save the model every 15 epochs
             if (epoch + 1) % 15 == 0:
-                checkpoint.save(file_prefix = checkpoint_prefix)
+                self.save()
 
             print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
     
