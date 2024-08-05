@@ -1,7 +1,8 @@
 import cv2
 import scipy.ndimage
 import tensorflow as tf
-from tensorflow.keras import layers
+from tensorflow import keras
+from keras import layers
 
 from ops import scalar_summary, images_summary
 from ops import gradients_summary
