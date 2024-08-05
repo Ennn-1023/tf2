@@ -2,6 +2,7 @@ import yaml
 from easydict import EasyDict as edict
 import tensorflow as tf
 from ..model.model import MyModel
+from ..trainer.trainer import Trainer
 
 def load_yml(path):
     with open(path, 'r') as f:
@@ -53,4 +54,8 @@ if __name__ == "__main__":
     )
 
 
-    model = MyModel()
+    model = MyModel("Mymodel")
+
+    trainer = Trainer( model )
+
+    trainer.train(train_ds, config.MAX_ITERS )
