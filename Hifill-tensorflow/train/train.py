@@ -1,7 +1,7 @@
 import yaml
 from easydict import EasyDict as edict
 import tensorflow as tf
-from model.model import MyModel
+from ..model.model import MyModel
 
 def load_yml(path):
     with open(path, 'r') as f:
