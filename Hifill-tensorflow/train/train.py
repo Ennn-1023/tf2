@@ -14,6 +14,27 @@ def load_yml(path):
             print(exc)
 
 
+def convert_mask(mask):
+    """
+    將 RGB 的 mask 轉換為單通道的二值 mask，白色部分為 1，黑色部分為 0。
+
+    參數:
+        mask: Tensor, 大小為 (512, 512, 3) 的 RGB mask 圖像。
+
+    返回:
+        Tensor, 大小為 (512, 512, 1) 的二值 mask。
+    """
+    # 計算灰度值，這是由於 RGB 到灰度的轉換通常按這樣的權重：0.299 R + 0.587 G + 0.114 B
+    gray_mask = tf.reduce_mean(mask, axis=-1, keepdims=True)
+
+    # 由於輸入圖像是二值圖像（白色和黑色），可以簡化為直接比較是否為白色
+    # 假設像素值已被正規化在 [0, 1]，即白色為 1，黑色為 0
+    gray_mask = gray_mask / 255.0
+    binary_mask = tf.where(gray_mask > 0.5, 1.0, 0.0)
+
+    return binary_mask
+
+
 
 if __name__ == "__main__":
     # load config.yml file
