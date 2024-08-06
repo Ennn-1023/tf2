@@ -29,14 +29,11 @@ def load_data(original_dir, mask_dir, fixed_dir, image_size):
 
     return tf.data.Dataset.from_tensor_slices((tf.stack(original_images), tf.stack(masks), tf.stack(fixed_images)))
 
-def preprocess_data(original, mask, fixed):
-    original = original / 255.0
-    mask = mask / 255.0
-    fixed = fixed / 255.0
+def split(original, mask, fixed):
     return {'original_images': original, 'masks': mask, 'fixed_images': fixed}
 
 def create_dataset(original_dir, mask_dir, fixed_dir, image_size, batch_size):
     dataset = load_data(original_dir, mask_dir, fixed_dir, image_size)
-    # dataset = dataset.map(preprocess_data)
-    dataset = dataset.shuffle(buffer_size=1000).batch(batch_size)
+    dataset = dataset.map(split)
+    dataset = dataset.shuffle(buffer_size=1000).batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
     return dataset
