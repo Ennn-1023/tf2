@@ -32,6 +32,7 @@ class Trainer:
         self.dis_optimizer = keras.optimizers.Adam(learning_rate=1e-4, beta_1=0.5, beta_2=0.9)
         self.gen_optimizer = keras.optimizers.Adam(learning_rate=1e-4, beta_1=0.5, beta_2=0.9)
         
+
     def compute_losses(self, gen_output, dis_output, interps, D_interps, dataset, masks):
         losses = {}
         coarse_alpha = self.config.COARSE_ALPHA
@@ -88,14 +89,26 @@ class Trainer:
         self.model.discriminator.save_weights(dir_path + '/discriminator')
 
 
-    def train(self, dataset, epochs, continue_training = False):
-        checkpoint_dir = './training_checkpoints'
-        checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-        
+    def train(self, train_ds, dir_path, epochs, continue_training = False):
+        '''
+        Train the model
+        params:
+        dataset: training dataset
+        dir_path: directory to load/save the model
+        epochs: number of epochs to train
+        continue_training: whether to continue training from a previous checkpoint
+        '''
+
+        # load the model if continue_training is True
+        if continue_training:
+            self.model.generator.load_weights(dir_path + '/generator')
+            self.model.discriminator.load_weights(dir_path + '/discriminator')
+
+        # train the model
         for epoch in range(epochs):
             start = time.time()
 
-            for image_batch in dataset:
+            for image_batch in train_ds:
                 self.train_step(image_batch)
 
             # Save the model every 15 epochs
@@ -103,7 +116,7 @@ class Trainer:
                 self.save()
 
             print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
-    
+            
 
         
         

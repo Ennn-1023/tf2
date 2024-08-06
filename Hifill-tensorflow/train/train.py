@@ -23,8 +23,7 @@ if __name__ == "__main__":
     else:
         gpu_ids = [0]
 
-    print('building networks and losses...')
-    enq_ops = []
+    print('loading train&validation data...')
 
     # load training data
     data_dir = config.TRAIN_LIST
@@ -56,6 +55,8 @@ if __name__ == "__main__":
 
     model = MyModel("Mymodel")
 
-    trainer = Trainer( model )
+    # def weight path
+    dir_path = './model_weight'
+    trainer = Trainer(model, config, dir_path)
 
-    trainer.train(train_ds, config.MAX_ITERS )
+    trainer.train(train_ds, config.CONTINUE_TRAIN, config.MAX_ITERS )
