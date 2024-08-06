@@ -29,13 +29,25 @@ def load_data(original_dir, mask_dir, fixed_dir, image_size):
 
     return tf.data.Dataset.from_tensor_slices((tf.stack(original_images), tf.stack(masks), tf.stack(fixed_images)))
 
-def split(original, mask, fixed):
-    return {'original_images': original, 'masks': mask, 'fixed_images': fixed}
+def preprocess_data(data):
+    """
+    預處理函數，將資料集中每個元素的遮罩圖像轉換為二值圖像。
+    
+    參數:
+        data: dict, 包含原始圖像、遮罩圖像和修復後圖像的字典。
+    
+    返回:
+        dict, 預處理過的字典，遮罩圖像已經被轉換為二值圖像。
+    """
+    data['original_images'] = data['original_images'] / 255.0
+    data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
+    data['fixed_images'] = data['fixed_images'] / 255.0
+    return data
 
 def create_dataset(original_dir, mask_dir, fixed_dir, image_size, batch_size):
     dataset = load_data(original_dir, mask_dir, fixed_dir, image_size)
-    dataset = dataset.map(lambda orig, mask, fixed: (orig, convert_mask(mask), fixed))
-    dataset = dataset.shuffle(buffer_size=1000).batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
+    dataset = dataset.map(preprocess_data)
+    dataset = dataset.shuffle(1000).batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
     return dataset
 
 def convert_mask(mask):
