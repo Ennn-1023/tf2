@@ -24,7 +24,7 @@ def load_data(original_dir, mask_dir, fixed_dir, image_size):
 
         if os.path.exists(orig_path) and os.path.exists(mask_path):
             original_images.append(load_image(orig_path, image_size))
-            masks.append(load_mask(mask_path, image_size))
+            masks.append(load_image(mask_path, image_size))
             fixed_images.append(load_image(fixed_path, image_size))
 
     return tf.data.Dataset.from_tensor_slices((tf.stack(original_images), tf.stack(masks), tf.stack(fixed_images)))
@@ -40,12 +40,3 @@ def create_dataset(original_dir, mask_dir, fixed_dir, image_size, batch_size):
     # dataset = dataset.map(preprocess_data)
     dataset = dataset.shuffle(buffer_size=1000).batch(batch_size)
     return dataset
-
-# Example usage:
-original_dir = 'path/to/original_images'
-mask_dir = 'path/to/masks'
-fixed_dir = 'path/to/fixed_images'
-image_size = (512, 512)
-batch_size = config.BATCH_SIZE
-
-train_ds = create_dataset(original_dir, mask_dir, fixed_dir, image_size, batch_size)
