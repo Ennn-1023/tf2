@@ -58,5 +58,4 @@ if __name__ == "__main__":
 
     trainer = Trainer( model )
 
-
-    trainer.train( train_ds, config.MAX_ITERS )
+    trainer.train(train_ds, config.MAX_ITERS )
