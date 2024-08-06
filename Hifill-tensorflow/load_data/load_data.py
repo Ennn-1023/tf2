@@ -34,7 +34,7 @@ def split(original, mask, fixed):
 
 def create_dataset(original_dir, mask_dir, fixed_dir, image_size, batch_size):
     dataset = load_data(original_dir, mask_dir, fixed_dir, image_size)
-    dataset = dataset.map(split)
+    dataset = dataset.map(lambda orig, mask, fixed: (orig, convert_mask(mask), fixed))
     dataset = dataset.shuffle(buffer_size=1000).batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
     return dataset
 
