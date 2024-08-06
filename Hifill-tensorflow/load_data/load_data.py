@@ -52,7 +52,7 @@ def create_dataset(original_dir, mask_dir, fixed_dir, image_size, batch_size):
 
 def convert_mask(mask):
     """
-    將 RGB 的 mask 轉換為單通道的二值 mask，白色部分為 1，黑色部分為 0。
+    將 RGB 的 mask 轉換為單通道的二值 mask白色部分為 1 黑色部分為 0。
 
     參數:
         mask: Tensor, 大小為 (512, 512, 3) 的 RGB mask 圖像。
