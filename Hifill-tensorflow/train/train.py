@@ -3,6 +3,7 @@ from easydict import EasyDict as edict
 import tensorflow as tf
 from ..model.model import MyModel
 from ..trainer.trainer import Trainer
+from ..load_data import load_data
 
 def load_yml(path):
     with open(path, 'r') as f:
@@ -25,7 +26,7 @@ if __name__ == "__main__":
 
     print('loading train&validation data...')
 
-    # load training data
+    '''    # load training data
     data_dir = config.TRAIN_LIST
     data_dir = './data/examples/train/'
     train_ds =  tf.keras.utils.image_dataset_from_directory(
@@ -50,7 +51,15 @@ if __name__ == "__main__":
         image_size=(512, 512),
         batch_size=config.BATCH_SIZE,
         color_mode="rgb"
-    )
+    )'''
+
+    # def data path
+    original_dir = './data/examples/train/origin'
+    mask_dir = './data/examples/train/mask'
+    fixed_dir = './data/examples/train/fixed'
+    # get dataset
+    train_ds = load_data.create_dataset(original_dir, mask_dir, fixed_dir, config.IMG_SHAPE, config.BATCH_SIZE)
+    
 
 
     model = MyModel("Mymodel")
