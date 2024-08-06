@@ -84,6 +84,7 @@ class Trainer:
             self.gen_optimizer.apply_gradients(zip(grad_gen, self.model.generator.trainable_variables))
             self.dis_optimizer.apply_gradients(zip(grad_dis, self.model.discriminator.trainable_variables))
 
+
     def save(self, dir_path):
         self.model.generator.save_weights(dir_path + '/generator')
         self.model.discriminator.save_weights(dir_path + '/discriminator')
@@ -116,5 +117,7 @@ class Trainer:
                 self.save()
 
             print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
-            print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
-
+            
+        
+        
+            
