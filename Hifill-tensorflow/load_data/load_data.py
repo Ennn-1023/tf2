@@ -69,4 +69,3 @@ def convert_mask(mask):
     binary_mask = tf.where(gray_mask > 0.5, 1.0, 0.0)
 
     return binary_mask
-

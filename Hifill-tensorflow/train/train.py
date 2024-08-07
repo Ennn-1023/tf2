@@ -1,8 +1,8 @@
 import yaml
 from easydict import EasyDict as edict
 import tensorflow as tf
-from ..model.model import MyModel
-from ..trainer.trainer import Trainer
+from ..models.model import MyModel
+from ..trainers import Trainer
 from ..load_data import load_data
 
 def load_yml(path):
