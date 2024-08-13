@@ -57,11 +57,9 @@ if __name__ == "__main__":
     )'''
 
     # def data path
-    original_dir = './MyData/train/origin'
-    mask_dir = './MyData/train/mask'
-    fixed_dir = './MyData/train/fixed'
+    data_dir = './MyData/train/'
     # get dataset
-    train_ds = load_data.create_dataset(original_dir, mask_dir, fixed_dir, config.IMG_SHAPE, config.BATCH_SIZE)
+    train_ds = load_data.create_dataset(data_dir, config.IMG_SHAPE, config.BATCH_SIZE)
     
 
 
