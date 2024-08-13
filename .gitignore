@@ -5,3 +5,5 @@ Hifill-tensorflow/dataModule/__pycache__/dataset.cpython-38.pyc
 *.LAPTOP-934LL2L9
 *.pyc
 /Hifill-tensorflow/__pycache__
+/Hifill-tensorflow/MyData/train
+Hifill-tensorflow/.idea/misc.xml

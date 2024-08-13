@@ -1,9 +1,9 @@
 import yaml
 from easydict import EasyDict as edict
 import tensorflow as tf
-from ..models.model import MyModel
-from ..trainers import Trainer
-from ..load_data import load_data
+from model import MyModel
+from trainer import Trainer
+import load_data
 
 def load_yml(path):
     with open(path, 'r') as f:
@@ -21,7 +21,7 @@ def load_yml(path):
 
 if __name__ == "__main__":
     # load config.yml file
-    config = load_yml('config1.yml')
+    config = load_yml('MyVersion/config1.yml')
     if config.GPU_ID != -1:
         gpu_ids = config.GPU_ID
     else:
@@ -57,9 +57,9 @@ if __name__ == "__main__":
     )'''
 
     # def data path
-    original_dir = './data/examples/train/origin'
-    mask_dir = './data/examples/train/mask'
-    fixed_dir = './data/examples/train/fixed'
+    original_dir = './MyData/train/origin'
+    mask_dir = './MyData/train/mask'
+    fixed_dir = './MyData/train/fixed'
     # get dataset
     train_ds = load_data.create_dataset(original_dir, mask_dir, fixed_dir, config.IMG_SHAPE, config.BATCH_SIZE)
     
@@ -71,4 +71,4 @@ if __name__ == "__main__":
     dir_path = './model_weight'
     trainer = Trainer(model, config, dir_path)
 
-    trainer.train(train_ds, config.CONTINUE_TRAIN, config.MAX_ITERS )
+    trainer.train(train_ds, config.CONTINUE_TRAIN, config.MAX_ITERS)
