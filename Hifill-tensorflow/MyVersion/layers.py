@@ -137,11 +137,14 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
     assert shape_src[0] == shape_ref[0] and shape_src[3] == shape_ref[3], 'error'
     batch_size = shape_src[0]
     nc = shape_src[3]
-
+    
+    print("shapesrc",shape_src)
+    print("shaperef",shape_ref)
     # raw features
     kernel = rate * 2 - 1
     raw_feats = tf.compat.v1.extract_image_patches(ref, [1,kernel,kernel,1], [1,rate,rate,1], [1,1,1,1], padding='SAME')
     raw_feats = tf.reshape(raw_feats, [batch_size, -1, kernel, kernel, nc])
+    # raw_feats = tf.reshape(raw_feats, [batch_size, kernel, kernel, nc]) # modified
     raw_feats = tf.transpose(raw_feats, [0, 2, 3, 4, 1])  # transpose to b*k*k*c*hw
     raw_feats_lst = tf.split(raw_feats, batch_size, axis=0)
 
@@ -154,6 +157,7 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
     shape_s = src.get_shape().as_list()
     shape_r = ref.get_shape().as_list()
     src_lst = tf.split(src, batch_size, axis=0)
+
 
     feats = tf.compat.v1.extract_image_patches(ref, [1,ksize,ksize,1], [1,1,1,1], [1,1,1,1], padding='SAME')
     feats = tf.reshape(feats, [batch_size, -1, ksize, ksize, nc])

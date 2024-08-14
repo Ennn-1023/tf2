@@ -30,12 +30,12 @@ def get_conv_op(conv_type):
 
 
 class MyModel:
-    def __init__(self, name):
+    def __init__(self, name, config=None):
         self.name = name
-        self.generator = self.build_generator()
+        self.generator = self.build_generator(config)
         self.discriminator = self.build_discriminator()
 
-    def build_generator(self, img_input, mask_input, config=None, dtype=tf.float32,training=True):
+    def build_generator(self, config=None, dtype=tf.float32, training=True):
         """
         Build the generator model
         """

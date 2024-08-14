@@ -63,7 +63,7 @@ if __name__ == "__main__":
     
 
 
-    model = MyModel("Mymodel")
+    model = MyModel("Mymodel", config)
 
     # def weight path
     dir_path = './model_weight'
