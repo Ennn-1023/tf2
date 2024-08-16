@@ -60,8 +60,7 @@ if __name__ == "__main__":
     data_dir = './MyData/train/'
     # get dataset
     train_ds = load_data.create_dataset(data_dir, config.IMG_SHAPE, config.BATCH_SIZE)
-    
-
+    print('train_ds', train_ds.element_spec)
 
     model = MyModel("Mymodel", config)
 
