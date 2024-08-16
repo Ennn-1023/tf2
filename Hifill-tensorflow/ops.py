@@ -248,7 +248,9 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
 
     # raw features
     kernel = rate * 2 - 1
+    print('shape_ref', shape_ref)
     raw_feats = tf.compat.v1.extract_image_patches(ref, [1,kernel,kernel,1], [1,rate,rate,1], [1,1,1,1], padding='SAME')
+    print('raw_feats shape', raw_feats.shape)
     raw_feats = tf.reshape(raw_feats, [batch_size, -1, kernel, kernel, nc])
     raw_feats = tf.transpose(raw_feats, [0, 2, 3, 4, 1])  # transpose to b*k*k*c*hw
     raw_feats_lst = tf.split(raw_feats, batch_size, axis=0)
