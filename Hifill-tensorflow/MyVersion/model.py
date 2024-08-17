@@ -44,8 +44,8 @@ class MyModel:
         sz = config.IMG_SHAPE[1]
         nc = config.GEN_NC
 
-        img_input = tf.keras.layers.Input(shape=(512, 512, 3))
-        mask_input = tf.keras.layers.Input(shape=(512, 512, 1))
+        img_input = tf.keras.layers.Input(shape=(512, 512, 3), batch_size=config.BATCH_SIZE)
+        mask_input = tf.keras.layers.Input(shape=(512, 512, 1), batch_size=config.BATCH_SIZE)
 
         # add masked image
         xnow = tf.concat([img_input, mask_input], axis=3) # (512, 512, 4)
