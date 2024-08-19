@@ -255,14 +255,18 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
     raw_feats = tf.transpose(raw_feats, [0, 2, 3, 4, 1])  # transpose to b*k*k*c*hw
     raw_feats_lst = tf.split(raw_feats, batch_size, axis=0)
 
+    print('src before downsample', src.get_shape().as_list())
     # resize
     src = downsample(src, rate)
     ref = downsample(ref, rate) 
-
+    print('src after downsample', src.get_shape().as_list())
     ss = tf.shape(src)
     rs = tf.shape(ref)
     shape_s = src.get_shape().as_list()
     shape_r = ref.get_shape().as_list()
+    # shape_s = [4, 32, 32, 128]
+    #print(ss)
+    #print('shape_s', shape_s)
     src_lst = tf.split(src, batch_size, axis=0)
 
     feats = tf.compat.v1.extract_image_patches(ref, [1,ksize,ksize,1], [1,1,1,1], [1,1,1,1], padding='SAME')
