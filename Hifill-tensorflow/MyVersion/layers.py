@@ -150,8 +150,12 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
     src = downsample(src, rate) # ??
     ref = downsample(ref, rate)
 
-    ss = tf.shape(src)
-    rs = tf.shape(ref)
+    #ss = tf.shape(src) # orginal
+    ss = src.get_shape().as_list()
+    #rs = tf.shape(ref) # orginal
+    rs = ref.get_shape().as_list()
+    # ss = [4, 32, 32, 512]
+
     shape_s = src.get_shape().as_list()
     shape_r = ref.get_shape().as_list()
     src_lst = tf.split(src, batch_size, axis=0)
@@ -187,9 +191,10 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
         r = r[0]
         r = r / tf.maximum(tf.sqrt(tf.reduce_sum(tf.square(r), axis=[0,1,2])), 1e-8)
         y = tf.nn.conv2d(x, r, strides=[1,1,1,1], padding="SAME")
-
+        # y shape: (1, 32, 32, 4096)
         if fuse:
-            yi = tf.reshape(y, [1, ss[1]*ss[2], rs[1]*rs[2], 1])
+            # (1, 1024, 1024, 1)
+            yi = tf.reshape(y, [1, ss[1]*ss[2], rs[1]*rs[2], 1]) # error occured
             yi = tf.nn.conv2d(yi, fuse_weight, strides=[1,1,1,1], padding='SAME')
             yi = tf.reshape(yi, [1, ss[1], ss[2], rs[1], rs[2]])
             yi = tf.transpose(yi, [0, 2, 1, 4, 3])
@@ -286,7 +291,7 @@ def downsample(x, rate):
     )
 
     # 調整形狀以達到下採樣的效果
-    return tf.reshape(x, (shp[0], new_height, new_width, -1))
+    return tf.reshape(x, shape=(shp[0], new_height, new_width, -1))
 
     
 
