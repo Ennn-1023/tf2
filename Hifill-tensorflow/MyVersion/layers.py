@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from keras import layers
-
+import numpy as np
 
 def gen_conv(x, cnum, ksize, stride=1, rate=1, name='conv',
              padding='SAME', activation=tf.nn.elu, training=True, dtype=tf.float32):
@@ -181,17 +181,21 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
     mask = tf.cast(tf.equal(tf.reduce_mean(mask, axis=[0,1,2], keepdims=True), 0.), dtype)
 
     """
+    mask_lst = tf.split(mask, batch_size, axis=0)
     #mask = resize(mask, to_shape=[32,32], func=tf.image.resize_nearest_neighbor)
-    mask = tf.nn.max_pool(mask, [1,16,16,1], [1,16,16,1],'SAME')
-    mask = tf.nn.max_pool(mask, [1,3,3,1], [1,1,1,1],'SAME')
-    mask = 1 - mask
-    mask = tf.reshape(mask, [1, 1, 1, -1])
+    new_mask_lst = []
+    for mask in mask_lst:    
+        mask = tf.nn.max_pool(mask, [1,16,16,1], [1,16,16,1],'SAME')
+        mask = tf.nn.max_pool(mask, [1,3,3,1], [1,1,1,1],'SAME')
+        mask = 1 - mask
+        new_mask = tf.reshape(mask, [1, 1, 1, -1])
+        new_mask_lst.append(new_mask)
 
 
     y_lst, y_up_lst = [], []
     offsets = []
     fuse_weight = tf.reshape(tf.eye(fuse_k, dtype=dtype), [fuse_k, fuse_k, 1, 1])
-    for x, r, raw_r in zip(src_lst, feats_lst, raw_feats_lst):
+    for x, r, raw_r, mask in zip(src_lst, feats_lst, raw_feats_lst, new_mask_lst):
         r = r[0]
         r = r / tf.maximum(tf.sqrt(tf.reduce_sum(tf.square(r), axis=[0,1,2])), 1e-8)
         y = tf.nn.conv2d(x, r, strides=[1,1,1,1], padding="SAME")
@@ -240,11 +244,29 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
         w_add = tf.tile(tf.reshape(tf.range(ss[2]), [1, 1, ss[2], 1]), [ss[0], ss[1], 1, 1])
         offsets = offsets - tf.concat([h_add, w_add], axis=3)
         flow = flow_to_image_tf(offsets)
-        flow = resize(flow, scale=rate, func=tf.compat.v1.image.resize_nearest_neighbor)
+        flow = ResizeLayer(scale=rate)(flow)
+        # flow = resize(flow, scale=rate, func=tf.image.resize())
     else:
         flow = None
     return out, correspondence, flow
 
+class ResizeLayer(tf.keras.layers.Layer):
+    def __init__(self, to_shape=None, scale=None):
+        super(ResizeLayer, self).__init__()
+        self.scale = scale
+        self.to_shape = to_shape
+
+    def call(self, img):
+        scale = self.scale
+        to_shape = self.to_shape
+        if to_shape is None:
+            if scale is None:
+                to_shape = img.get_shape().as_list()[1:3]
+                to_shape[0], to_shape[1] = to_shape[0] * 2, to_shape[1] * 2
+            else:
+                to_shape = img.get_shape().as_list()[1:3]
+                to_shape[0], to_shape[1] = int(to_shape[0] * scale), int(to_shape[1] * scale)
+        return tf.compat.v1.image.resize_nearest_neighbor(img, to_shape)
 
 def resize(img, to_shape = None, scale =None, func = None):
     if to_shape is None:
@@ -255,6 +277,89 @@ def resize(img, to_shape = None, scale =None, func = None):
         to_shape = img.get_shape().as_list()[1:3]
         to_shape[0], to_shape[1] = int(to_shape[0] * scale), int(to_shape[1] * scale)
     return func(img, to_shape)
+
+def make_color_wheel():
+    RY, YG, GC, CB, BM, MR = (15, 6, 4, 11, 13, 6)
+    ncols = RY + YG + GC + CB + BM + MR
+    colorwheel = np.zeros([ncols, 3])
+    col = 0
+    # RY
+    colorwheel[0:RY, 0] = 255
+    colorwheel[0:RY, 1] = np.transpose(np.floor(255*np.arange(0, RY) / RY))
+    col += RY
+    # YG
+    colorwheel[col:col+YG, 0] = 255 - np.transpose(np.floor(255*np.arange(0, YG) / YG))
+    colorwheel[col:col+YG, 1] = 255
+    col += YG
+    # GC
+    colorwheel[col:col+GC, 1] = 255
+    colorwheel[col:col+GC, 2] = np.transpose(np.floor(255*np.arange(0, GC) / GC))
+    col += GC
+    # CB
+    colorwheel[col:col+CB, 1] = 255 - np.transpose(np.floor(255*np.arange(0, CB) / CB))
+    colorwheel[col:col+CB, 2] = 255
+    col += CB
+    # BM
+    colorwheel[col:col+BM, 2] = 255
+    colorwheel[col:col+BM, 0] = np.transpose(np.floor(255*np.arange(0, BM) / BM))
+    col += + BM
+    # MR
+    colorwheel[col:col+MR, 2] = 255 - np.transpose(np.floor(255 * np.arange(0, MR) / MR))
+    colorwheel[col:col+MR, 0] = 255
+    return colorwheel
+
+def compute_color(u,v):
+    h, w = u.shape
+    img = np.zeros([h, w, 3])
+    nanIdx = np.isnan(u) | np.isnan(v)
+    u[nanIdx] = 0
+    v[nanIdx] = 0
+    # colorwheel = COLORWHEEL
+    colorwheel = make_color_wheel()
+    ncols = np.size(colorwheel, 0)
+    rad = np.sqrt(u**2+v**2)
+    a = np.arctan2(-v, -u) / np.pi
+    fk = (a+1) / 2 * (ncols - 1) + 1
+    k0 = np.floor(fk).astype(int)
+    k1 = k0 + 1
+    k1[k1 == ncols+1] = 1
+    f = fk - k0
+    for i in range(np.size(colorwheel,1)):
+        tmp = colorwheel[:, i]
+        col0 = tmp[k0-1] / 255
+        col1 = tmp[k1-1] / 255
+        col = (1-f) * col0 + f * col1
+        idx = rad <= 1
+        col[idx] = 1-rad[idx]*(1-col[idx])
+        notidx = np.logical_not(idx)
+        col[notidx] *= 0.75
+        img[:, :, i] = np.uint8(np.floor(255 * col*(1-nanIdx)))
+    return img
+
+def flow_to_image(flow):
+    out = []
+    maxu = -999.
+    maxv = -999.
+    minu = 999.
+    minv = 999.
+    maxrad = -1
+    for i in range(flow.shape[0]):
+        u = flow[i, :, :, 0]
+        v = flow[i, :, :, 1]
+        idxunknow = (abs(u) > 1e7) | (abs(v) > 1e7)
+        u[idxunknow] = 0
+        v[idxunknow] = 0
+        maxu = max(maxu, np.max(u))
+        minu = min(minu, np.min(u))
+        maxv = max(maxv, np.max(v))
+        minv = min(minv, np.min(v))
+        rad = np.sqrt(u ** 2 + v ** 2)
+        maxrad = max(maxrad, np.max(rad))
+        u = u/(maxrad + np.finfo(float).eps)
+        v = v/(maxrad + np.finfo(float).eps)
+        img = compute_color(u, v)
+        out.append(img)
+    return np.float32(np.uint8(out))
 
 def flow_to_image_tf(flow, name='flow_to_image'):
     # 使用 tf.name_scope 替代 variable_scope
