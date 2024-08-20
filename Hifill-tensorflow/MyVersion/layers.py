@@ -118,6 +118,7 @@ def dilate_block2(x, name, conv_func):
     x = conv_func(x, nc, 3, rate=16, name= name + '_d16')
     return x
 def apply_contextual_attention(x, mask_s, method = 'SOFT', name='attention', dtype=tf.float32, conv_func = None):
+    # mask_s shape = [4, 512, 512, 1]
     x_hallu = x
     sz = x.get_shape().as_list()[1]
     nc = x.get_shape().as_list()[3]
@@ -131,6 +132,7 @@ def apply_contextual_attention(x, mask_s, method = 'SOFT', name='attention', dty
 
 def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
                          fuse_k=3, softmax_scale=10., fuse=True, dtype=tf.float32):
+    # original: mask shape: [1, 512, 512, 1]
     # mask shape: [4, 512, 512, 1]
 
     # get shapes
