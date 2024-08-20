@@ -239,6 +239,7 @@ def resize_like(mask, x):
 
 def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
                          fuse_k=3, softmax_scale=10., fuse=True, dtype=tf.float32):
+    # mask shape: [1, 512, 512, 1]
     # get shapes
     shape_src = src.get_shape().as_list()
     shape_ref = ref.get_shape().as_list()
