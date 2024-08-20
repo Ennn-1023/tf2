@@ -131,6 +131,8 @@ def apply_contextual_attention(x, mask_s, method = 'SOFT', name='attention', dty
 
 def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
                          fuse_k=3, softmax_scale=10., fuse=True, dtype=tf.float32):
+    # mask shape: [4, 512, 512, 1]
+
     # get shapes
     shape_src = src.get_shape().as_list()
     shape_ref = ref.get_shape().as_list()
@@ -211,6 +213,7 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
             y =  tf.pow( coef * tf.divide(y, ym + 1e-04 ), 2)
         elif method == 'SOFT':
             # 1024, 4096
+            print('mask shape:',mask.get_shape().as_list())
             y = tf.nn.softmax(y * mask * softmax_scale, 3) * mask
         y.set_shape([1, shape_s[1], shape_s[2], shape_r[1]*shape_r[2]])
 
