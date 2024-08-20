@@ -46,7 +46,8 @@ class HinpaintModel:
 
     def build_generator(self, x, mask, config=None, reuse=False,
                           training=True, padding='SAME', name='generator', dtype=tf.float32):
-        
+        print('-----------------x shape:', x.shape)
+        print('-----------------mask shape:', mask.shape)
         x_in = x
         mask_batch = tf.ones(x_in.get_shape().as_list()[0:3]+[1], dtype=dtype) * mask
         x = tf.concat([x_in, mask_batch], axis=3)
@@ -106,6 +107,7 @@ class HinpaintModel:
 
             # attention 
             mask_s = mask #resize_like(mask, x)
+            print('-----------------mask_s shape:', mask_s.shape)
             x, match, offset_flow = apply_contextual_attention(x, mask_s, method = config.ATTENTION_TYPE, \
                              name='re_att_'+str(sz_t), dtype=dtype, conv_func=conv2)
             # decoder
@@ -155,6 +157,7 @@ class HinpaintModel:
         real = real / 127.5 - 1. # old one
 
         mask = random_mask(config, name='mask_input')
+        print('====mask shape:', mask.shape)
         #print('real type', type(real))
         x = real * (1.-mask)
         x1, x2, offset_flow = self.build_generator(

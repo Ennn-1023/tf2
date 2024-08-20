@@ -218,7 +218,7 @@ def random_mask(config, name='mask', dtype=tf.float32):
         mask.set_shape([height, width, 3])
         # mask = tf.image.resize(mask, [height, width], method='nearest') # new
 
-        #print('shape', mask.get_shape().as_list())
+        print('in random_mask shape:', mask.get_shape().as_list())
         mask = tf.compat.v1.py_func(random_resize_image, [mask, scale, height, width], tf.uint8)
         mask = tf.compat.v1.image.resize_image_with_crop_or_pad(mask, height, width)
         mask = tf.scalar_mul(1./255., tf.cast(tf.expand_dims(mask[:,:,0:1], axis=0), dtype))
