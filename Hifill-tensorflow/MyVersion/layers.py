@@ -24,7 +24,7 @@ def conv2d(x, output_dim, ksize, stride, dilation_rate=1, activation=None, paddi
         dilation_rate=dilation_rate,
         activation=activation,  # 激活函數
         padding=padding,
-        name=name,
+        #name=name,
         dtype=dtype,
         kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.05),  # 權重初始化
         bias_initializer=tf.keras.initializers.Constant(0.0)  # 偏置初始化
@@ -409,10 +409,33 @@ def downsample(x, rate):
     return tf.reshape(x, shape=(shp[0], new_height, new_width, -1))
 '''
     
+def apply_attention(x, correspondence, conv_func, name):
+    shp = x.get_shape().as_list()
+    shp_att = correspondence.get_shape().as_list()
+    #print(shp, shp_att)
+    rate = shp[1]// shp_att[1]
+    kernel = rate * 2
+    batch_size = shp[0]
+    sz = shp[1]
+    nc = shp[3]
+    raw_feats = tf.compat.v1.extract_image_patches(x, [1,kernel,kernel,1], [1,rate,rate,1], [1,1,1,1], padding='SAME')
+    raw_feats = tf.reshape(raw_feats, [batch_size, -1, kernel, kernel, nc])
+    raw_feats = tf.transpose(raw_feats, [0, 2, 3, 4, 1])  # transpose to b*k*k*c*hw
+    raw_feats_lst = tf.split(raw_feats, batch_size, axis=0)
+    
+    ys = []
+    att_lst = tf.split(correspondence, batch_size, axis=0)
+    for feats, att in zip(raw_feats_lst, att_lst):
+        #print(att.get_shape().as_list(), feats.get_shape().as_list())
+        y = tf.nn.conv2d_transpose(att, feats[0], [1] + shp[1:], strides=[1,rate,rate,1])
+        ys.append(y)
+    out = tf.concat(ys, axis=0)
+    if conv_func is not None:
+      out = conv_func(out, nc, 3, 1, rate=1, name = name + '_1')
+      out = conv_func(out, nc, 3, 1, rate=2, name = name + '_2')
+    return out
 
-
-
-
+'''
 def apply_attention(x, correspondence, conv_func, name):
     shp = tf.shape(x)  # 使用 tf.shape 獲取動態形狀
     shp_att = tf.shape(correspondence)
@@ -453,7 +476,7 @@ def apply_attention(x, correspondence, conv_func, name):
         out = conv_func(out, nc, 3, 1, rate=2, name=name + '_2')
 
     return out
-
+'''
 
 def dis_conv(x, cnum, ksize=5, stride=2, name='conv', dtype=tf.float32):
     x = conv2d(x, cnum, ksize, stride, padding='SAME', name=name, dtype=dtype,activation='leaky_relu')
@@ -470,7 +493,7 @@ class Discriminator_block(keras.layers.Layer):
         self.nc = nc
         self.ksize = ksize
         self.stride = stride
-        self.Reshape = keras.layers.Reshape()
+        # self.Reshape = keras.layers.Reshape()
         
     def call(self, x):
         stride = self.stride

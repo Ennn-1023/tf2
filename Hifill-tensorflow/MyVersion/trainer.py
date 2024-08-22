@@ -65,7 +65,7 @@ class Trainer:
     def train_step(self, train_ds):
         with tf.GradientTape() as gen_tape, tf.GradientTape() as dis_tape:
             
-            generated_images = self.model.generator(train_ds['images'], training=True)
+            generated_images = self.model.generator([train_ds['fixed_images'], train_ds['masks']], training=True)
             
             x = train_ds['original_images']*(1.-train_ds['masks'])
             fake_patched = generated_images * train_ds['masks'] + x * (1.-train_ds['masks']) # ?
@@ -74,7 +74,7 @@ class Trainer:
                 real_fake = tf.concat([real_fake, tf.tile(train_ds['masks'], [self.config.BATCH_SIZE*2, 1, 1, 1])], axis=3)
             real_fake = self.model.discriminator([train_ds['original_images'], generated_images], training=True)
             interps = random_interpolates(train_ds['original_images'], fake_patched)
-            D_interps = self.build_discriminator(interps, reuse=True, nc=self.config.DIS_NC)
+            D_interps = self.discriminator(interps, reuse=True, nc=self.config.DIS_NC)
             
             # compute losses
             losses = self.compute_losses(generated_images, real_fake, interps, D_interps, train_ds)

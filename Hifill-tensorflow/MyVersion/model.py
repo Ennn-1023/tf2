@@ -88,7 +88,7 @@ class MyModel:
 
     def build_discriminator(self, training=True, nc=64):
         model = tf.keras.Sequential()
-        model.add(Discriminator_block(nc=nc, training=training))
+        model.add(Discriminator_block('discriminator_block',nc=nc, training=training))
         return model
 
         

@@ -66,6 +66,6 @@ if __name__ == "__main__":
 
     # def weight path
     dir_path = './model_weight'
-    trainer = Trainer(model, config, dir_path)
-
+    # trainer = Trainer(model, config, dir_path)
+    trainer = Trainer(model, config)
     trainer.train(train_ds, config.CONTINUE_TRAIN, config.MAX_ITERS)
