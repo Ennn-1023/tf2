@@ -7,7 +7,7 @@ TEST_LIST: "./data/examples/val.list"
 mask_template_dir: "mask_templates/"
 CONTINUE_TRAIN: False
 MODEL_RESTORE: ""
-LOG_DIR: model_HD_512
+LOG_DIR: "./logs"
 RANDOM_CROP: True
 
 IMG_SHAPE: [512, 512, 3]

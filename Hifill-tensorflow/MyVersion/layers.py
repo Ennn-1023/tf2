@@ -34,6 +34,22 @@ def conv2d(x, output_dim, ksize, stride, dilation_rate=1, activation=None, paddi
     conv = conv_layer(x)
     return conv
 
+def conv2d_layer(output_dim, ksize, stride, dilation_rate=1, activation=None, padding='same', name='conv',
+           dtype=tf.float32):
+    conv_layer = tf.keras.layers.Conv2D(
+        filters=output_dim,
+        kernel_size=ksize,
+        strides=stride,
+        dilation_rate=dilation_rate,
+        activation=activation,  # 激活函數
+        padding=padding,
+        #name=name,
+        dtype=dtype,
+        kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=0.05),  # 權重初始化
+        bias_initializer=tf.keras.initializers.Constant(0.0)  # 偏置初始化
+    )
+    return conv_layer
+
 def gen_conv_gated(x, cnum, ksize, stride=1, rate=1, name='conv',
              padding='SAME', slim=True, activation=None, training=True, dtype=tf.float32):
     x1 = conv2d(x, cnum, ksize, stride, dilation_rate=rate,
@@ -493,24 +509,25 @@ class Discriminator_block(keras.layers.Layer):
         self.nc = nc
         self.ksize = ksize
         self.stride = stride
-        # self.Reshape = keras.layers.Reshape()
+        self.conv2d_1 = conv2d_layer(nc, ksize, stride, padding='SAME', name='conv1', dtype=dtype)
+        self.conv2d_2 = conv2d_layer(nc*2, ksize, stride, padding='SAME', name='conv2', dtype=dtype)
+        self.conv2d_3 = conv2d_layer(nc*4, ksize, stride, padding='SAME', name='conv3', dtype=dtype)
+        self.conv2d_4 = conv2d_layer(nc*4, ksize, stride, padding='SAME', name='conv4', dtype=dtype)
+        self.conv2d_5 = conv2d_layer(nc*4, ksize, stride, padding='SAME', name='conv5', dtype=dtype)
+        self.conv2d_6 = conv2d_layer(nc*4, ksize, stride, padding='SAME', name='conv6', dtype=dtype)
         
     def call(self, x):
-        stride = self.stride
-        nc = self.nc
-        dtype = self.dtype
-        ksize = self.ksize
-        x = conv2d(x, nc, ksize, stride, padding='SAME', name='conv1', dtype=dtype)
+        x = self.conv2d_1(x)
         x = keras.layers.LeakyReLU()(x)
-        x = conv2d(x, nc*2, ksize, stride, padding='SAME', name='conv2', dtype=dtype)
+        x = self.conv2d_2(x)
         x = keras.layers.LeakyReLU()(x)
-        x = conv2d(x, nc*4, ksize, stride, padding='SAME', name='conv3', dtype=dtype)
+        x = self.conv2d_3(x)
         x = keras.layers.LeakyReLU()(x)
-        x = conv2d(x, nc*4, ksize, stride, padding='SAME', name='conv4', dtype=dtype)
+        x = self.conv2d_4(x)
         x = keras.layers.LeakyReLU()(x)
-        x = conv2d(x, nc*4, ksize, stride, padding='SAME', name='conv5', dtype=dtype)
+        x = self.conv2d_5(x)
         x = keras.layers.LeakyReLU()(x)
-        x = conv2d(x, nc*4, ksize, stride, padding='SAME', name='conv6', dtype=dtype)
+        x = self.conv2d_6(x)
         x = flatten(x)
         return x
     

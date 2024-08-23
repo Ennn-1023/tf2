@@ -31,12 +31,13 @@ class Trainer:
         self.config = config
         self.dis_optimizer = keras.optimizers.Adam(learning_rate=1e-4, beta_1=0.5, beta_2=0.9)
         self.gen_optimizer = keras.optimizers.Adam(learning_rate=1e-4, beta_1=0.5, beta_2=0.9)
-        
+        self.summary_writer = tf.summary.create_file_writer(config.LOG_DIR+'/train_log')
 
-    def compute_losses(self, gen_output, dis_output, interps, D_interps, dataset, masks):
+    def compute_losses(self, gen_output, D_real_fake, interps, D_interps, dataset):
+        masks = dataset['masks']
         losses = {}
         coarse_alpha = self.config.COARSE_ALPHA
-        preprocessed_images = dataset['images']
+        preprocessed_images = dataset['fixed_images']
         real = dataset['original_images']
         losses['l1_loss'] = coarse_alpha*tf.reduce_mean(tf.abs(real - preprocessed_images)*masks)
         losses['l1_loss'] = tf.reduce_mean(tf.abs(real - gen_output)*masks)
@@ -45,8 +46,8 @@ class Trainer:
         losses['ae_loss'] += tf.reduce_mean(tf.abs(real - gen_output)* (1.-masks) )
         losses['ae_loss'] /= tf.reduce_mean(1.-masks)
          # gan loss
-        dis_output
-        D_real, D_fake = tf.split(dis_output, 2)
+        D_real_fake
+        D_real, D_fake = tf.split(D_real_fake, 2)
         g_loss, d_loss = gan_wgan_loss(D_real, D_fake, name='gan_loss')
         losses['g_loss'] = g_loss
         losses['d_loss'] = d_loss
@@ -72,12 +73,12 @@ class Trainer:
             real_fake = tf.concat([train_ds['original_images'], fake_patched], axis=0)
             if self.config.GAN_WITH_MASK:
                 real_fake = tf.concat([real_fake, tf.tile(train_ds['masks'], [self.config.BATCH_SIZE*2, 1, 1, 1])], axis=3)
-            real_fake = self.model.discriminator([train_ds['original_images'], generated_images], training=True)
+            D_real_fake = self.model.discriminator(real_fake, training=True)
             interps = random_interpolates(train_ds['original_images'], fake_patched)
-            D_interps = self.discriminator(interps, reuse=True, nc=self.config.DIS_NC)
+            D_interps = self.model.discriminator(interps)
             
             # compute losses
-            losses = self.compute_losses(generated_images, real_fake, interps, D_interps, train_ds)
+            losses = self.compute_losses(generated_images, D_real_fake, interps, D_interps, train_ds)
             
             grad_gen = gen_tape.gradient(losses['g_loss'], self.model.generator.trainable_variables)
             grad_dis = dis_tape.gradient(losses['d_loss'], self.model.discriminator.trainable_variables)
@@ -101,21 +102,29 @@ class Trainer:
 
         # load the model if continue_training is True
         if continue_training:
+            print('Continue training: \nloading model weights from:', dir_path)
             self.model.generator.load_weights(dir_path + '/generator')
             self.model.discriminator.load_weights(dir_path + '/discriminator')
 
         # train the model
+        print('Start training...')
         for epoch in range(epochs):
             start = time.time()
 
             for image_batch in train_ds:
-                self.train_step(image_batch)
+                losses = self.train_step(image_batch)
+            
 
+            with self.summary_writer.as_default():
+                tf.summary.scalar('Generator Loss', losses['g_loss'], step=epoch)
+                tf.summary.scalar('Discriminator Loss', losses['d_loss'], step=epoch)
+            
             # Save the model every 15 epochs
             if (epoch + 1) % 15 == 0:
                 self.save()
 
             print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
+            print(f"Generator Loss: {losses['g_loss']}, Discriminator Loss: {losses['d_loss']}")
             
 
         
