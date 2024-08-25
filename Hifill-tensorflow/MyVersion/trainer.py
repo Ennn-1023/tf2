@@ -87,6 +87,7 @@ class Trainer:
             grad_dis = dis_tape.gradient(losses['d_loss'], self.model.discriminator.trainable_variables)
             self.gen_optimizer.apply_gradients(zip(grad_gen, self.model.generator.trainable_variables))
             self.dis_optimizer.apply_gradients(zip(grad_dis, self.model.discriminator.trainable_variables))
+            return {'g_loss': losses['g_loss'], 'd_loss': losses['d_loss']}
 
     def save(self, dir_path):
         self.model.generator.save_weights(dir_path + '/generator')
