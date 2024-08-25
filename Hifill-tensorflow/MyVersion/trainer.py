@@ -94,7 +94,7 @@ class Trainer:
         self.model.discriminator.save_weights(dir_path + '/discriminator')
 
 
-    def train(self, train_ds, dir_path, epochs, continue_training = False):
+    def train(self, train_ds, dir_path, epochs = 100, continue_training = False):
         '''
         Train the model
         params:
