@@ -63,7 +63,9 @@ if __name__ == "__main__":
     print('train_ds', train_ds.element_spec)
 
     model = MyModel("Mymodel", config)
-
+    # model.generator.build(input_shape=(config.BATCH_SIZE, 512, 512, 3))
+    # model.generator.summary()
+    # model.discriminator.summary()
     # def weight path
     dir_path = './model_weight'
     # trainer = Trainer(model, config, dir_path)

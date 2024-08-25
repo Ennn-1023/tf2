@@ -38,28 +38,28 @@ def load_data(image_path, image_size = (512, 512), batch_size = 4):
         labels = None,
         label_mode = None,
         image_size = image_size,
-        batch_size = batch_size,
-        shuffle = True,
+        batch_size = None,
+        shuffle = False,
     )
     mask = tf.keras.preprocessing.image_dataset_from_directory(
         mask_path,
         labels = None,
         label_mode = None,
         image_size = image_size,
-        batch_size = batch_size,
-        shuffle = True,
+        batch_size = None,
+        shuffle = False,
     )
     fixed = tf.keras.preprocessing.image_dataset_from_directory(
         fixed_path,
         labels = None,
         label_mode = None,
         image_size = image_size,
-        batch_size = batch_size,
-        shuffle = True,
+        batch_size = None,
+        shuffle = False,
     )
     dataset = tf.data.Dataset.zip((origin, mask, fixed))
     dataset = dataset.map(lambda orig, mask, fixed: {'original_images': orig, 'masks': mask, 'fixed_images': fixed})
-    dataset = dataset.map(preprocess_data)
+    dataset = dataset.map(preprocess_data).shuffle(4000).batch(batch_size)
     return dataset
 
 

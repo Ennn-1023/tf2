@@ -4,6 +4,8 @@ from tensorflow import keras
 import numpy as np
 import time
 
+from tqdm import tqdm
+
 
 def gan_wgan_loss(pos, neg, name='gan_loss'):
     d_loss = tf.reduce_mean(neg) - tf.reduce_mean(pos)
@@ -80,6 +82,7 @@ class Trainer:
             # compute losses
             losses = self.compute_losses(generated_images, D_real_fake, interps, D_interps, train_ds)
             
+            # apply gradients
             grad_gen = gen_tape.gradient(losses['g_loss'], self.model.generator.trainable_variables)
             grad_dis = dis_tape.gradient(losses['d_loss'], self.model.discriminator.trainable_variables)
             self.gen_optimizer.apply_gradients(zip(grad_gen, self.model.generator.trainable_variables))
@@ -111,9 +114,11 @@ class Trainer:
         for epoch in range(epochs):
             start = time.time()
 
-            for image_batch in train_ds:
-                losses = self.train_step(image_batch)
-            
+            with tqdm(total=len(train_ds), desc=f"Epoch {epoch+1}/{epochs}", unit="batch") as pbar:
+                for image_batch in train_ds:
+                    losses = self.train_step(image_batch)
+                    # Update the progress bar
+                    pbar.update(1)
 
             with self.summary_writer.as_default():
                 tf.summary.scalar('Generator Loss', losses['g_loss'], step=epoch)
