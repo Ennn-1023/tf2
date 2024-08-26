@@ -125,9 +125,9 @@ class Trainer:
                 tf.summary.scalar('Generator Loss', losses['g_loss'], step=epoch)
                 tf.summary.scalar('Discriminator Loss', losses['d_loss'], step=epoch)
             
-            # Save the model every 15 epochs
-            if (epoch + 1) % 15 == 0:
-                self.save()
+            # Save the model every 10 epochs
+            if (epoch + 1) % 10 == 0:
+                self.save(dir_path)
 
             print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
             print(f"Generator Loss: {losses['g_loss']}, Discriminator Loss: {losses['d_loss']}")

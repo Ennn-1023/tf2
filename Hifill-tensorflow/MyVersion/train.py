@@ -70,4 +70,4 @@ if __name__ == "__main__":
     dir_path = './model_weight'
     # trainer = Trainer(model, config, dir_path)
     trainer = Trainer(model, config)
-    trainer.train(train_ds, config.CONTINUE_TRAIN, config.MAX_ITERS)
+    trainer.train(train_ds, dir_path=dir_path,continue_training=config.CONTINUE_TRAIN, config=config.MAX_ITERS)
