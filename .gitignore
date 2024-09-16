@@ -9,3 +9,4 @@ Hifill-tensorflow/dataModule/__pycache__/dataset.cpython-38.pyc
 Hifill-tensorflow/.idea/misc.xml
 /Hifill-tensorflow/logs/train_log
 /Hifill-tensorflow/model_weights
+/Hifill-tensorflow/model_weight
