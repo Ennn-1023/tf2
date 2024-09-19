@@ -1,10 +1,9 @@
-import cv2
 import tensorflow as tf
+import load_data
 from model import MyModel
 from easydict import EasyDict as edict
 import yaml
 import load_data
-
 import matplotlib.pyplot as plt
 
 def load_yml(path):
@@ -24,6 +23,7 @@ def load_test_data(fName):
 
     fixed = fixed / 127.5 - 1.0
     mask = load_data.convert_mask(mask)
+    fixed = fixed*(1-mask) + mask
     fixed = tf.expand_dims(fixed, 0)
     mask = tf.expand_dims(mask, 0)
     return [fixed, mask]

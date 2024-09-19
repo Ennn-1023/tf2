@@ -71,3 +71,7 @@ if __name__ == "__main__":
     # trainer = Trainer(model, config, dir_path)
     trainer = Trainer(model, config)
     trainer.train(train_ds, dir_path=dir_path,continue_training=config.CONTINUE_TRAIN)
+    # batch size 調整
+    # 同一地點的圖片 training
+    # 用相同做test
+    # 印出 discrimnator accuracy

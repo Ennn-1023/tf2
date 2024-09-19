@@ -41,14 +41,13 @@ class Trainer:
         coarse_alpha = self.config.COARSE_ALPHA
         preprocessed_images = dataset['fixed_images']
         real = dataset['original_images']
-        losses['l1_loss'] = coarse_alpha*tf.reduce_mean(tf.abs(real - preprocessed_images)*masks)
-        losses['l1_loss'] = tf.reduce_mean(tf.abs(real - gen_output)*masks)
+        # losses['l1_loss'] = coarse_alpha*tf.reduce_mean(tf.abs(real - preprocessed_images)*masks) # no meaning
+        losses['l1_loss'] = tf.reduce_mean(tf.abs(real - gen_output)*masks) # +
 
-        losses['ae_loss'] = coarse_alpha * tf.reduce_mean(tf.abs(real - preprocessed_images) * (1.-masks))
-        losses['ae_loss'] += tf.reduce_mean(tf.abs(real - gen_output)* (1.-masks) )
+        # losses['ae_loss'] = coarse_alpha * tf.reduce_mean(tf.abs(real - preprocessed_images) * (1.-masks))
+        losses['ae_loss'] = tf.reduce_mean(tf.abs(real - gen_output)* (1.-masks) )
         losses['ae_loss'] /= tf.reduce_mean(1.-masks)
          # gan loss
-        D_real_fake
         D_real, D_fake = tf.split(D_real_fake, 2)
         g_loss, d_loss = gan_wgan_loss(D_real, D_fake, name='gan_loss')
         losses['g_loss'] = g_loss
