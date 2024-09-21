@@ -62,6 +62,12 @@ class Trainer:
         losses['g_loss'] += self.config.AE_LOSS_ALPHA * losses['ae_loss']
         return losses
     
+    def compute_accuracy(self, D_real, D_fake):
+        # For D_real, the target is 1 (real), and for D_fake, the target is 0 (fake)
+        real_accuracy = tf.reduce_mean(tf.cast(D_real > 0.5, tf.float32))  # Assuming output between 0 and 1
+        fake_accuracy = tf.reduce_mean(tf.cast(D_fake < 0.5, tf.float32))  # Fake should be classified as < 0.5
+        total_accuracy = (real_accuracy + fake_accuracy) / 2
+        return real_accuracy, fake_accuracy, total_accuracy
 
     @tf.function
     def train_step(self, train_ds):
@@ -86,7 +92,12 @@ class Trainer:
             grad_dis = dis_tape.gradient(losses['d_loss'], self.model.discriminator.trainable_variables)
             self.gen_optimizer.apply_gradients(zip(grad_gen, self.model.generator.trainable_variables))
             self.dis_optimizer.apply_gradients(zip(grad_dis, self.model.discriminator.trainable_variables))
-            return {'g_loss': losses['g_loss'], 'd_loss': losses['d_loss']}
+
+            D_real, D_fake = tf.split(D_real_fake, 2)
+            real_acc, fake_acc, total_acc = self.compute_accuracy(D_real, D_fake)
+
+            return {'g_loss': losses['g_loss'], 'd_loss': losses['d_loss'], 'real_acc': real_acc, 'fake_acc': fake_acc, 'total_acc': total_acc}
+
 
     def save(self, dir_path):
         self.model.generator.save_weights(dir_path + '/generator')
@@ -128,8 +139,11 @@ class Trainer:
             if (epoch + 1) % 10 == 0:
                 self.save(dir_path)
 
-            print ('Time for epoch {} is {} sec'.format(epoch + 1, time.time()-start))
-            print(f"Generator Loss: {losses['g_loss']}, Discriminator Loss: {losses['d_loss']}")
+            print(f"Time for epoch {epoch + 1} is {time.time() - start} sec")
+            print(f"Generator Loss: {losses['g_loss']}, Discriminator Loss: {losses['d_loss']}, "
+                  f"Discriminator Real Accuracy: {losses['real_acc']}, "
+                  f"Discriminator Fake Accuracy: {losses['fake_acc']}, "
+                  f"Total Accuracy: {losses['total_acc']}")
             
 
         
