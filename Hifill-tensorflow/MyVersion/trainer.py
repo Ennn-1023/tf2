@@ -140,7 +140,7 @@ class Trainer:
                 self.save(dir_path)
 
             print(f"Time for epoch {epoch + 1} is {time.time() - start} sec")
-            print(f"Generator Loss: {losses['g_loss']}, Discriminator Loss: {losses['d_loss']}, "
+            print(f"Generator Loss: {losses['g_loss']}, Discriminator Loss: {losses['d_loss']}, \n"
                   f"Discriminator Real Accuracy: {losses['real_acc']}, "
                   f"Discriminator Fake Accuracy: {losses['fake_acc']}, "
                   f"Total Accuracy: {losses['total_acc']}")

@@ -1,8 +1,8 @@
 #TRAIN_LIST: '/data/HDFill/data/places2/train.list'
 #VAL_LIST: '/data/HDFill/data/places2/val.list'
 #TEST_LIST: '/data/HDFill/data/places2/val.list'
-TRAIN_LIST: "./data/examples/train.list"
-VAL_LIST: "./data/examples/val.list"
+TRAIN_PATH: "/storage/LoFTR/results3_british_museum"
+VAL_PATH: "/storage/LoFTR/results3V_british_museum"
 TEST_LIST: "./data/examples/val.list"
 mask_template_dir: "mask_templates/"
 CONTINUE_TRAIN: False
@@ -11,7 +11,7 @@ LOG_DIR: "./logs"
 RANDOM_CROP: True
 
 IMG_SHAPE: [512, 512, 3]
-BATCH_SIZE: 10
+BATCH_SIZE: 16
 BOTTLENECK_SIZE: 64
 MULTISCALE_ATTENTION: True
 ATTENTION_TYPE: SOFT # HARD, SOFT
@@ -31,7 +31,7 @@ GAN_WITH_MASK: False
 GPU_ID: [0]
 TRAIN_SPE: 30000
 VAL_PSTEPS: 2000
-MAX_ITERS: 100
+MAX_ITERS: 10000
 VIZ_MAX_OUT: 10
 VAL: True
 N_THREADS: 1

@@ -26,9 +26,6 @@ def get_conv_op(conv_type):
     return conv, deconv
 
 # Our model class
-
-
-
 class MyModel:
     def __init__(self, name, config=None):
         self.name = name
