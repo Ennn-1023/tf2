@@ -59,7 +59,7 @@ def load_data(image_path, image_size = (512, 512), batch_size = 4):
     )
     dataset = tf.data.Dataset.zip((origin, mask, fixed))
     dataset = dataset.map(lambda orig, mask, fixed: {'original_images': orig, 'masks': mask, 'fixed_images': fixed})
-    dataset = dataset.map(preprocess_data).shuffle(4000).batch(batch_size)
+    dataset = dataset.map(preprocess_data).shuffle(14000).batch(batch_size)
     return dataset
 
 
