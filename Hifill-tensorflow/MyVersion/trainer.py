@@ -1,3 +1,4 @@
+import logging
 import os
 import tensorflow as tf
 from tensorflow import keras
@@ -99,12 +100,27 @@ class Trainer:
             return {'g_loss': losses['g_loss'], 'd_loss': losses['d_loss'], 'real_acc': real_acc, 'fake_acc': fake_acc, 'total_acc': total_acc}
 
 
-    def save(self, dir_path):
-        self.model.generator.save_weights(dir_path + '/generator')
-        self.model.discriminator.save_weights(dir_path + '/discriminator')
+    def save(self, dir_path, suffix=''):
+        path = dir_path + '/weights_' + suffix
+        self.model.generator.save_weights(path + '/generator')
+        self.model.discriminator.save_weights(path + '/discriminator')
 
+    def setup_logger(log_dir, log_file_name='training.log'):
+        # Create log directory if it doesn't exist
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+    
+        # Set up logging to file and console
+        log_path = os.path.join(log_dir, log_file_name)
+    
+        logging.basicConfig(level=logging.INFO, 
+                        format='%(asctime)s - %(levelname)s - %(message)s', 
+                        handlers=[
+                            logging.FileHandler(log_path),   # Write to file
+                            logging.StreamHandler()          # Print to console
+                        ])
 
-    def train(self, train_ds, dir_path, epochs = 100, continue_training = False):
+    def train(self, train_ds, dir_path, log_path, epochs = 100, continue_training = False):
         '''
         Train the model
         params:
@@ -119,6 +135,9 @@ class Trainer:
             print('Continue training: \nloading model weights from:', dir_path)
             self.model.generator.load_weights(dir_path + '/generator')
             self.model.discriminator.load_weights(dir_path + '/discriminator')
+        
+        self.setup_logger(log_dir=log_path)
+
 
         # train the model
         print('Start training...')
@@ -134,15 +153,24 @@ class Trainer:
             with self.summary_writer.as_default():
                 tf.summary.scalar('Generator Loss', losses['g_loss'], step=epoch)
                 tf.summary.scalar('Discriminator Loss', losses['d_loss'], step=epoch)
+                tf.summary.scalar('Discriminator Real Accuracy', losses['real_acc'], step=epoch)
+                tf.summary.scalar('Discriminator Fake Accuracy', losses['fake_acc'], step=epoch)
+                tf.summary.scalar('Discriminator Accuracy', losses['total_acc'], step=epoch)
+            
+            # Log epoch summary
+            logging.info(f"Epoch {epoch+1}/{epochs}: Generator Loss: {losses['g_loss']:.4f}, "
+                     f"Discriminator Loss: {losses['d_loss']:.4f}, "
+                     f"Discriminator Real Accuracy: {losses['real_acc']:.4f}, "
+                     f"Discriminator Fake Accuracy: {losses['fake_acc']:.4f}, "
+                     f"Total Accuracy: {losses['total_acc']:.4f}"
+                     f"\nTime for epoch {epoch + 1} is {time.time() - start} sec")
             
             # Save the model every 10 epochs
-            if (epoch + 1) % 10 == 0:
-                self.save(dir_path)
+            if (epoch + 1) % 100 == 0:
+                self.save(dir_path, suffix=f'epoch_{epoch+1}')
 
             print(f"Time for epoch {epoch + 1} is {time.time() - start} sec")
             print(f"Generator Loss: {losses['g_loss']}, Discriminator Loss: {losses['d_loss']}, \n"
-                  f"Discriminator Real Accuracy: {losses['real_acc']}, "
-                  f"Discriminator Fake Accuracy: {losses['fake_acc']}, "
                   f"Total Accuracy: {losses['total_acc']}")
             
 

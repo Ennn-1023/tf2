@@ -67,9 +67,10 @@ if __name__ == "__main__":
     # model.discriminator.summary()
     # def weight path
     dir_path = './model_weight'
+    log_path = './train_log'
     # trainer = Trainer(model, config, dir_path)
     trainer = Trainer(model, config)
-    trainer.train(train_ds, epochs=config.MAX_ITERS, dir_path=dir_path,continue_training=config.CONTINUE_TRAIN)
+    trainer.train(train_ds, epochs=config.MAX_ITERS, dir_path=dir_path, log_path=log_path,continue_training=config.CONTINUE_TRAIN)
     # batch size 調整
     # 同一地點的圖片 training
     # 用相同做test
