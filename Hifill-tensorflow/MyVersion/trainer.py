@@ -27,6 +27,22 @@ def gradients_penalty(interpolates_global, dout_global, mask):
     gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
     return gradient_penalty
 
+
+def setup_logger(log_dir, log_file_name='training.log'):
+    # Create log directory if it doesn't exist
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    # Set up logging to file and console
+    log_path = os.path.join(log_dir, log_file_name)
+
+    logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s', 
+                    handlers=[
+                        logging.FileHandler(log_path),   # Write to file
+                        logging.StreamHandler()          # Print to console
+                    ])
+
 # def trainer
 class Trainer:
     def __init__(self, model, config = None):
@@ -105,21 +121,6 @@ class Trainer:
         self.model.generator.save_weights(path + '/generator')
         self.model.discriminator.save_weights(path + '/discriminator')
 
-    def setup_logger(log_dir, log_file_name='training.log'):
-        # Create log directory if it doesn't exist
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-    
-        # Set up logging to file and console
-        log_path = os.path.join(log_dir, log_file_name)
-    
-        logging.basicConfig(level=logging.INFO, 
-                        format='%(asctime)s - %(levelname)s - %(message)s', 
-                        handlers=[
-                            logging.FileHandler(log_path),   # Write to file
-                            logging.StreamHandler()          # Print to console
-                        ])
-
     def train(self, train_ds, dir_path, log_path, epochs = 100, continue_training = False):
         '''
         Train the model
@@ -136,7 +137,7 @@ class Trainer:
             self.model.generator.load_weights(dir_path + '/generator')
             self.model.discriminator.load_weights(dir_path + '/discriminator')
         
-        self.setup_logger(log_path)
+        setup_logger(log_path)
 
 
         # train the model
