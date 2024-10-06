@@ -159,11 +159,11 @@ class Trainer:
                 tf.summary.scalar('Discriminator Accuracy', losses['total_acc'], step=epoch)
             
             # Log epoch summary
-            logging.info(f"Epoch {epoch+1}/{epochs}: Generator Loss: {losses['g_loss']:.4f}, "
-                     f"Discriminator Loss: {losses['d_loss']:.4f}, "
-                     f"Discriminator Real Accuracy: {losses['real_acc']:.4f}, "
-                     f"Discriminator Fake Accuracy: {losses['fake_acc']:.4f}, "
-                     f"Total Accuracy: {losses['total_acc']:.4f}"
+            logging.info(f"Epoch {epoch+1}/{epochs}: Generator Loss: {losses['g_loss']:.6f}, "
+                     f"Discriminator Loss: {losses['d_loss']:.6f}, "
+                     f"Discriminator Real Accuracy: {losses['real_acc']:.6f}, "
+                     f"Discriminator Fake Accuracy: {losses['fake_acc']:.6f}, "
+                     f"Total Accuracy: {losses['total_acc']:.6f}"
                      f"\nTime for epoch {epoch + 1} is {time.time() - start} sec")
             
             # Save the model every 10 epochs
