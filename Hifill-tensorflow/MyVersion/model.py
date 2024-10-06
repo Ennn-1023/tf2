@@ -46,7 +46,6 @@ class MyModel:
 
         # add masked image
         xnow = tf.concat([img_input, mask_input], axis=3) # (512, 512, 4)
-        print('________________define_xnow', xnow)
         activations = [img_input]
         # encoder
         sz_t = sz
@@ -65,8 +64,6 @@ class MyModel:
 
         # attention
         mask_s = mask_input  # resize_like(mask, x)
-        print('-----------------mask_s:', mask_s.shape)
-        print('-----------------x:', x.shape)
         x, match, offset_flow = apply_contextual_attention(x, mask_s, method=config.ATTENTION_TYPE, \
                                                            name='re_att_' + str(sz_t), dtype=dtype, conv_func=conv2)
         # decoder

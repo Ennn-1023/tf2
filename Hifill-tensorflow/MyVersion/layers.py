@@ -165,11 +165,11 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
     raw_feats = tf.reshape(raw_feats, [batch_size, -1, kernel, kernel, nc])
     raw_feats = tf.transpose(raw_feats, [0, 2, 3, 4, 1])  # transpose to b*k*k*c*hw
     raw_feats_lst = tf.split(raw_feats, batch_size, axis=0)
-    print('src before downsample:',src.get_shape().as_list())
+
     # resize
     src = downsample(src, rate) # ??
     ref = downsample(ref, rate)
-    print('src after downsample:',src.get_shape().as_list())
+
     #ss = tf.shape(src) # orginal
     ss = src.get_shape().as_list()
     #rs = tf.shape(ref) # orginal
@@ -235,7 +235,6 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
             y =  tf.pow( coef * tf.divide(y, ym + 1e-04 ), 2)
         elif method == 'SOFT':
             # 1024, 4096
-            print('mask shape:',mask.get_shape().as_list())
             y = tf.nn.softmax(y * mask * softmax_scale, 3) * mask
         y.set_shape([1, shape_s[1], shape_s[2], shape_r[1]*shape_r[2]])
 

@@ -141,7 +141,7 @@ class Trainer:
 
 
         # train the model
-        print('Start training...')
+        logging.info('Start training...')
         for epoch in range(epochs):
             start = time.time()
 
@@ -169,10 +169,6 @@ class Trainer:
             # Save the model every 10 epochs
             if (epoch + 1) % 100 == 0:
                 self.save(dir_path, suffix=f'epoch_{epoch+1}')
-
-            print(f"Time for epoch {epoch + 1} is {time.time() - start} sec")
-            print(f"Generator Loss: {losses['g_loss']}, Discriminator Loss: {losses['d_loss']}, \n"
-                  f"Total Accuracy: {losses['total_acc']}")
             
 
         
