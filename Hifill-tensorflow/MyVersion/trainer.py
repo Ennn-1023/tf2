@@ -136,7 +136,7 @@ class Trainer:
             self.model.generator.load_weights(dir_path + '/generator')
             self.model.discriminator.load_weights(dir_path + '/discriminator')
         
-        self.setup_logger(log_dir=log_path)
+        self.setup_logger(log_path)
 
 
         # train the model
