@@ -1,8 +1,8 @@
 #TRAIN_LIST: '/data/HDFill/data/places2/train.list'
 #VAL_LIST: '/data/HDFill/data/places2/val.list'
 #TEST_LIST: '/data/HDFill/data/places2/val.list'
-TRAIN_PATH: "/storage/LoFTR/results3_british_museum"
-VAL_PATH: "/storage/LoFTR/results3V_british_museum"
+TRAIN_PATH: "/storage/LoFTR/results_british_50"
+VAL_PATH: "/storage/LoFTR/resultsV_british_50"
 TEST_LIST: "./data/examples/val.list"
 mask_template_dir: "mask_templates/"
 CONTINUE_TRAIN: False
