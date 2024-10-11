@@ -131,18 +131,20 @@ class Trainer:
         continue_training: whether to continue training from a previous checkpoint
         '''
 
+        initial_epoch = 0
         # load the model if continue_training is True
         if continue_training:
             print('Continue training: \nloading model weights from:', dir_path)
-            self.model.generator.load_weights(dir_path + '/generator')
-            self.model.discriminator.load_weights(dir_path + '/discriminator')
-        
+            path = dir_path + '/weights_epoch_200'
+            self.model.generator.load_weights(path + '/generator')
+            self.model.discriminator.load_weights(path + '/discriminator')
+            initial_epoch = int(path.split('_')[-1])
         setup_logger(log_path)
 
 
         # train the model
         logging.info('Start training...')
-        for epoch in range(epochs):
+        for epoch in range(initial_epoch, epochs):
             start = time.time()
 
             with tqdm(total=len(train_ds), desc=f"Epoch {epoch+1}/{epochs}", unit="batch") as pbar:
