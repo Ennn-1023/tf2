@@ -77,7 +77,7 @@ class Trainer:
         losses['g_loss'] = self.config.GAN_LOSS_ALPHA * losses['g_loss']
         losses['g_loss'] += self.config.L1_LOSS_ALPHA * losses['l1_loss']
         losses['g_loss'] += self.config.AE_LOSS_ALPHA * losses['ae_loss']
-        return losses
+        return {'g_loss': losses['g_loss'], 'd_loss': losses['d_loss']} # return dict
     
     def compute_accuracy(self, D_real, D_fake):
         # For D_real, the target is 1 (real), and for D_fake, the target is 0 (fake)
