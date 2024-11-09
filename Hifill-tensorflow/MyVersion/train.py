@@ -57,11 +57,11 @@ if __name__ == "__main__":
     )'''
 
 
+
+    model = MyModel("Mymodel", config)
     # get dataset
     train_ds = load_data.create_dataset(config.TRAIN_PATH, config.IMG_SHAPE, config.BATCH_SIZE)
     print('train_ds', train_ds.element_spec)
-
-    model = MyModel("Mymodel", config)
     # model.generator.build(input_shape=(config.BATCH_SIZE, 512, 512, 3))
     # model.generator.summary()
     # model.discriminator.summary()
