@@ -6,14 +6,11 @@ import numpy as np
 def residual_block(x, nc, conv_func, name="residual"):
     shortcut = x 
     
-    # 第一个卷积
     x = conv_func(x, nc, 3, 1, rate=1, name=name + '_conv1')
     x = tf.keras.layers.ReLU()(x)
     
-    # 第二个卷积
     x = conv_func(x, nc, 3, 1, rate=1, name=name + '_conv2')
     
-    # 将捷径连接的输入加到输出
     x = tf.keras.layers.add([shortcut, x])
     x = tf.keras.layers.ReLU()(x)  # 激活函数
     
