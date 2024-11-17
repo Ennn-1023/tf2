@@ -1,4 +1,13 @@
 
-/Hifill-tensorflow/MyData
+/Hifill-tensorflow/__pycache__
+Hifill-tensorflow/dataModule/__pycache__/dataset.cpython-38.pyc
 *.pyc
+*.LAPTOP-934LL2L9
 *.pyc
+/Hifill-tensorflow/__pycache__
+/Hifill-tensorflow/MyData/train
+Hifill-tensorflow/.idea/misc.xml
+/Hifill-tensorflow/logs/train_log
+/Hifill-tensorflow/model_weights
+/Hifill-tensorflow/model_weight
+/Hifill-tensorflow/MyData/test

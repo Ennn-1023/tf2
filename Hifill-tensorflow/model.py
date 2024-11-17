@@ -1,7 +1,8 @@
 import cv2
 import scipy.ndimage
 import tensorflow as tf
-from tf_slim import arg_scope
+from tensorflow import keras
+from keras import layers
 
 from ops import scalar_summary, images_summary
 from ops import gradients_summary
@@ -17,7 +18,7 @@ from ops import resize_like, contextual_attention
 from ops import apply_attention, dilate_block, residual_block, apply_contextual_attention
 from ops import filter_gaussian, dilate_block2
 
-from easydict import EasyDict as edict
+#from easydict import EasyDict as edict
 
 def get_conv_op(conv_type):
     #gen_conv = ops.GenConvGated()
@@ -46,8 +47,7 @@ class HinpaintModel:
 
     def build_generator(self, x, mask, config=None, reuse=False,
                           training=True, padding='SAME', name='generator', dtype=tf.float32):
-        print('-----------------x shape:', x.shape)
-        print('-----------------mask shape:', mask.shape)
+        
         x_in = x
         mask_batch = tf.ones(x_in.get_shape().as_list()[0:3]+[1], dtype=dtype) * mask
         x = tf.concat([x_in, mask_batch], axis=3)
@@ -86,9 +86,12 @@ class HinpaintModel:
             x.set_shape(x_in.get_shape().as_list())
             x1 = x
             x_coarse = x * mask_batch + x_in * (1.-mask_batch)
+            # shape?
+
 
             # stage-2
             xnow = tf.concat([x_coarse, mask_batch], axis=3)
+            print('________________xnow', xnow)
             activations = [x_coarse]
             # encoder
             sz_t = sz
@@ -107,7 +110,6 @@ class HinpaintModel:
 
             # attention 
             mask_s = mask #resize_like(mask, x)
-            print('-----------------mask_s shape:', mask_s.shape)
             x, match, offset_flow = apply_contextual_attention(x, mask_s, method = config.ATTENTION_TYPE, \
                              name='re_att_'+str(sz_t), dtype=dtype, conv_func=conv2)
             # decoder
@@ -136,13 +138,11 @@ class HinpaintModel:
             x = dis_conv(x, nc*4, name='conv5', training=training)
             x = dis_conv(x, nc*4, name='conv6', training=training)
             x = flatten(x, name='reshape')
-            # D = tf.compat.v1.layers.dense(x, 1, name='linear') # old one
+            #  D = tf.compat.v1.layers.dense(x, 1, name='linear') # old one
             D = tf.keras.layers.Dense(1, name='linear')(x)
             return D
 
     def build_graph_with_losses(self, real, config, training=True, summary=False, reuse=False):
-
-
         """
         def preprocess_image(image):
             # 正则化图像数据
@@ -154,12 +154,14 @@ class HinpaintModel:
         """
 
         print(real)
-        real = real / 127.5 - 1. # old one
+        #real = real / 127.5 - 1. # old one
 
-        mask = random_mask(config, name='mask_input')
-        print('====mask shape:', mask.shape)
+        # mask = random_mask(config, name='mask_input')
+        mask = tf.ones(config.IMG_SHAPE[0:3]+[1], dtype=tf.float32)
+
         #print('real type', type(real))
-        x = real * (1.-mask)
+        # x = real * (1.-mask)
+        x = tf.multiply(real, (1. - mask))
         x1, x2, offset_flow = self.build_generator(
             x, mask, config, reuse=reuse, training=training)
         fake = x2
