@@ -56,7 +56,9 @@ class MyModel:
             sz_t //= 2
             kkernal = 5 if sz_t == sz else 3
             x = conv2(x, nc, 3, 2, name='re_en_down_' + str(sz_t))
+            shortCut = x
             x = conv2(x, nc, 3, 1, rate=1, name='re_en_conv_' + str(sz_t))
+            x = tf.keras.layers.add([shortCut, x])
             activations.append(x)
 
         # dilated conv

@@ -3,6 +3,8 @@ from tensorflow import keras
 from keras import layers
 import numpy as np
 
+
+# ------------------------------------------------------------
 def gen_conv(x, cnum, ksize, stride=1, rate=1, name='conv',
              padding='SAME', activation=tf.nn.elu, training=True, dtype=tf.float32):
     x = conv2d(x, cnum, ksize, stride, dilation_rate=rate,
