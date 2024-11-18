@@ -129,6 +129,7 @@ def dilate_block2(x, name, conv_func):
     sz = x.get_shape().as_list()[1]
     nc = x.get_shape().as_list()[3]
     #conv_func = gen_conv_gated
+    # x, cnum, ksize, stride=1, rate=1, name='conv', padding='SAME', slim=True, activation=None, training=True, dtype=tf.float32
     x = conv_func(x, nc, 3, 1, name= name + '_d1')
     x = conv_func(x, nc, 3, rate=2, name= name + '_d2')
     x = conv_func(x, nc, 3, rate=4, name= name+ '_d4')
@@ -531,4 +532,3 @@ class Discriminator_block(keras.layers.Layer):
         x = self.conv2d_6(x)
         x = flatten(x)
         return x
-    
