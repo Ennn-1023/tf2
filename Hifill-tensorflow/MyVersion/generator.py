@@ -58,14 +58,114 @@ class dilate_block2(keras.layers.Layer): # not checked yet
         self.kernel_size = kernel_size
         self.rate = rate
         self.name = name
+        self.channelNum = input.get_shape()[3]
     def call(self, input):
-        channelNum = input.get_shape()[3]
+        channelNum = self.channelNum
         x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="dilated_1")(input)
         x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=2, padding='SAME', name="dilated_2")(x)
         x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=4, padding='SAME', name="dilated_4")(x)
         x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=8, padding='SAME', name="dilated_8")(x)
         x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=16, padding='SAME', name="dilated_16")(x)
         return x
+
+class contextual_attention_block(keras.layers.Layer): # not checked yet
+    def __init__(self, input, mask_s, method, name='contextual_attention', dtype=tf.float32, conv_func=None, **kwargs):
+        super(contextual_attention, self).__init__(name=name, dtype=dtype, **kwargs)
+        self.input = input
+        self.mask_s = mask_s
+        self.method = method
+        self.name = name
+        self.dtype = dtype
+        self.conv_func = conv_func
+        self.size = input.get_shape().as_list()[1]
+        self.channelNum = input.get_shape().as_list()[3]
+    def call(self, input):
+        size = self.size
+        channelNum = self.channelNum
+        x_hallu = input
+     
+class contextual_attention(keras.layers.Layer): # not checked yet
+    def __init__(self, src_shape, ref_shape, method='SOFT', kernel_size=3, rate=1, fuse_k=3, softmax_scale=10., fuse=True, name='contextual_attention', dtype=tf.float32, **kwargs):
+        super(contextual_attention, self).__init__(name=name, dtype=dtype, **kwargs)
+        self.src_shape = src_shape
+        self.ref_shape = ref_shape
+        self.method = method
+        self.name = name
+        self.dtype = dtype
+        self.kernel_size = kernel_size
+        self.rate = rate
+        self.fuse_k = fuse_k
+        self.softmax_scale = softmax_scale
+        self.fuse = fuse
+        self.channelNum = input.get_shape().as_list()[3]
+        assert self.src.get_shape().as_list()[0] == self.ref.get_shape().as_list()[0] and \
+            self.src.get_shape().as_list()[3] == self.ref.get_shape().as_list()[3], 'source and reference shape mismatch'
+        self.batch_size = self.src.get_shape().as_list()[0]
+    def downsample(self, x, rate):
+        shp = x.get_shape().as_list()
+        assert shp[1] % rate == 0 and shp[2] % rate == 0, 'height and width should be multiples of rate'
+        shp[1], shp[2] = shp[1]//rate, shp[2]//rate # downsample height and width
+        x = tf.image.extract_patches(images=x, sizes=[1, rate, rate, 1], strides=[1, rate, rate, 1], rates=[1, 1, 1, 1], padding='SAME')
+        return keras.layers.Reshape(shp[1:])(x)
+    
+    def call(self, input):
+        # input = [src, ref, mask]
+        src = input[0]
+        ref = input[1]
+        mask = input[2]
+        src_shape = self.src_shape
+        ref_shape = self.ref_shape
+        batch_size = self.batch_size
+        channelNum = self.channelNum
+        rate = self.rate
+        # raw features
+        kernel = rate*2 -1
+        # --- have to check this part ---
+        # 要研究一下這裡的 dim_ordering 和變化
+        raw_features = tf.image.extract_patches(images=ref, sizes=[1, kernel, kernel, 1], strides=[1, 1, 1, 1], rates=[1, rate, rate, 1], padding='SAME')
+        raw_features = keras.layers.Reshape([batch_size, -1, kernel, kernel, channelNum])(raw_features)
+        raw_features = keras.layers.Permute([2, 3, 4, 1])(raw_features) # transpose to [batch, k, k, c, h*w]
+        raw_features_lst = tf.split(raw_features, num_or_size_splits=batch_size, axis=0)
+
+        # resize
+        src = self.downsample(src, rate)
+        ref = self.downsample(ref, rate)
+
+        src_shape = src.get_shape().as_list()
+        ref_shape = ref.get_shape().as_list()
+        ss = src_shape # downsampled shape
+        rs = ref_shape # downsampled shape
+        # --- have to check this part ---
+        
+        features = tf.image.extract_patches(images=ref, sizes=[1, kernel, kernel, 1], strides=[1, 1, 1, 1], rates=[1, 1, 1, 1], padding='SAME')
+        features = keras.layers.Reshape([-1, kernel, kernel, channelNum])(features)
+        features = keras.layers.Permute([2, 3, 4, 1])(features) # transpose to [batch, k, k, c, h*w]
+        features_lst = tf.split(features, num_or_size_splits=batch_size, axis=0)
+
+        # mask
+        mask = keras.layers.MaxPool2D(pool_size=(16,16), strides=(16,16), padding='SAME')(mask)
+        mask = keras.layers.MaxPool2D(pool_size=(3,3), strides=(1,1), padding='SAME')(mask)
+        mask = keras.layers.subtract([tf.constant(1, shape=mask.get_shape().as_list()), mask])
+        mask_lst = tf.split(mask, num_or_size_splits=batch_size, axis=0)
+
+        y_lst, y_up_lst, offsets = [], [], []
+        src_lst = tf.split(src, num_or_size_splits=batch_size, axis=0)
+        fuse_weight = keras.layers.Reshape(target_shape=[self.fuse_k, self.fuse_k, 1, 1])(tf.eye(self.fuse_k)) # ?
+        for x, ref_feat, ref_raw_feat, mask in zip(src_lst, features_lst, raw_features_lst, mask_lst):
+            ref_feat = ref_feat[0]
+            ref_feat = tf.divide(ref_feat, tf.maximum(tf.reduce_sum(tf.square(ref_feat), axis=[0, 1, 2]), 1e-8))
+            y = keras.layers.Conv2D(ref_feat, kernel_size=3, strides=(1,1), padding='SAME')(x)
+            if self.fuse:
+                yi = keras.layers.Reshape([ss[1]*ss[2], rs[1]*rs[2], 1])(y)
+                yi = keras.layers.Conv2D(filters=fuse_weight, strides=(1,1), padding='SAME')(yi)
+                yi = keras.layers.Reshape([ss[1], ss[2], rs[1], rs[2]])(yi)
+                yi = keras.layers.Permute([2, 1, 4, 3])(yi)
+                yi = keras.layers.Reshape([ss[1]*ss[2], rs[1]*rs[2]])(yi)
+                
+
+
+
+
 
 # define the generator model
 class generator(keras.models.Model):
@@ -75,8 +175,8 @@ class generator(keras.models.Model):
         self.config = config
 
     def call(self, input, training=True):
-        img_input = keras.layers.Input(shape=(512, 512, 3), batch_size=config.BATCH_SIZE)
-        mask_input = keras.layers.Input(shape=(512, 512, 1), batch_size=config.BATCH_SIZE)
+        img_input = input[0]
+        mask_input = input[1]
         xnow = keras.layers.concatenate([img_input, mask_input], axis=3) # (512, 512, 4)
         activations = [img_input]
         # encoder
@@ -108,9 +208,8 @@ class generator(keras.models.Model):
         # attention
         # not done yet
         mask_s = mask_input
-        x, match, _ = apply_contextual_attention(x, mask_s, method=config.ATTENTION_TYPE, \
-                                                           name='re_att_' + str(sz_t), dtype=dtype, conv_func=conv2)
-
+        x, match, _ = apply_contextual_attention(x, mask_s, method=config.ATTENTION_TYPE, 
+                                                 name='re_att_' + str(sz_t), dtype=dtype, conv_func=conv2)
 
 
 

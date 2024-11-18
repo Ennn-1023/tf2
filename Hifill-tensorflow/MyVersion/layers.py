@@ -189,7 +189,7 @@ def contextual_attention(src, ref,mask=None,  method='SOFT', ksize=3, rate=1,
     feats = tf.transpose(feats, [0, 2, 3, 4, 1])  # transpose to b*k*k*c*hw
     feats_lst = tf.split(feats, batch_size, axis=0)
 
-    # process mask
+    # process mask ?
     """
     if mask is None:
         mask = tf.zeros([1]+ shape_ref[1:3] + [1], dtype=dtype)
