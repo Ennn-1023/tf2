@@ -69,10 +69,8 @@ class dilate_block2(keras.layers.Layer): # not checked yet
         return x
 
 class contextual_attention_block(keras.layers.Layer): # not checked yet
-    def __init__(self, input, mask_s, method, name='contextual_attention', dtype=tf.float32, conv_func=None, **kwargs):
+    def __init__(self, method, name='contextual_attention', dtype=tf.float32, conv_func=None, **kwargs):
         super(contextual_attention, self).__init__(name=name, dtype=dtype, **kwargs)
-        self.input = input
-        self.mask_s = mask_s
         self.method = method
         self.name = name
         self.dtype = dtype
@@ -82,7 +80,14 @@ class contextual_attention_block(keras.layers.Layer): # not checked yet
     def call(self, input):
         size = self.size
         channelNum = self.channelNum
-        x_hallu = input
+        x, mask_s = input
+        x_hallu = x
+        x, corres = contextual_attention([x, x, mask_s], method=self.method, name=self.name, dtype=self.dtype)
+        x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="att_conv1")(x)
+        x = keras.layers.Concatenate(axis=3)([x, x_hallu])
+        x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="att_conv2")(x)
+        
+        return x, corres
      
 class contextual_attention(keras.layers.Layer): # not checked yet
     def __init__(self, src_shape, ref_shape, method='SOFT', kernel_size=3, rate=1, fuse_k=3, softmax_scale=10., fuse=True, name='contextual_attention', dtype=tf.float32, **kwargs):
@@ -148,10 +153,10 @@ class contextual_attention(keras.layers.Layer): # not checked yet
         mask = keras.layers.subtract([tf.constant(1, shape=mask.get_shape().as_list()), mask])
         mask_lst = tf.split(mask, num_or_size_splits=batch_size, axis=0)
 
-        y_lst, y_up_lst, offsets = [], [], []
+        y_lst, y_up_lst= [], []
         src_lst = tf.split(src, num_or_size_splits=batch_size, axis=0)
         fuse_weight = keras.layers.Reshape(target_shape=[self.fuse_k, self.fuse_k, 1, 1])(tf.eye(self.fuse_k)) # ?
-        for x, ref_feat, ref_raw_feat, mask in zip(src_lst, features_lst, raw_features_lst, mask_lst):
+        for x, ref_feat, raw_ref_feat, mask in zip(src_lst, features_lst, raw_features_lst, mask_lst):
             ref_feat = ref_feat[0]
             ref_feat = tf.divide(ref_feat, tf.maximum(tf.reduce_sum(tf.square(ref_feat), axis=[0, 1, 2]), 1e-8))
             y = keras.layers.Conv2D(ref_feat, kernel_size=3, strides=(1,1), padding='SAME')(x)
@@ -160,8 +165,37 @@ class contextual_attention(keras.layers.Layer): # not checked yet
                 yi = keras.layers.Conv2D(filters=fuse_weight, strides=(1,1), padding='SAME')(yi)
                 yi = keras.layers.Reshape([ss[1], ss[2], rs[1], rs[2]])(yi)
                 yi = keras.layers.Permute([2, 1, 4, 3])(yi)
-                yi = keras.layers.Reshape([ss[1]*ss[2], rs[1]*rs[2]])(yi)
-                
+                yi = keras.layers.Reshape([ss[1]*ss[2], rs[1]*rs[2]], 1)(yi)
+                yi = keras.layers.Conv2D(filters=fuse_weight, strides=(1,1), padding='SAME')(yi)
+                yi = keras.layers.Reshape([ss[2], ss[1], rs[2], rs[1]])(yi)
+                yi = keras.layers.Permute([2, 1, 4, 3])(yi)
+                y = yi
+            y = keras.layers.Reshape([ss[1], ss[2], rs[1]*rs[2]])(y)
+
+            if self.method == 'HARD':
+                ym = tf.reduce_max(y, axis=3, keepdims=True)
+                y = y*mask
+                coef = tf.cast(tf.greater_equal(y, tf.reduce_max(y, axis=3, keepdims=True)), dtyp=self.dtype)
+                y = tf.pow(coef * tf.divide(y, ym + 1e-04), 2)
+            elif self.method == 'SOFT':
+                y = tf.nn.softmax(y * mask * self.softmax_scale, 3) * mask
+            y.set_shape(1, src_shape[1], src_shape[2], ref_shape[1]*ref_shape[2])
+
+            if self.dtype == tf.float32:
+                offset = tf.argmax(y, axis=3, output_type=tf.float32)
+                offsets.append(offset)
+            feats = raw_ref_feat[0]
+            # y_up = tf.nn.conv2d_transpose
+            y_up =  tf.nn.conv2d_transpose(y, feats, output_shape=src_shape[1:], strides=(1, rate, rate, 1), padding='SAME')
+            y_lst.append(y)
+            y_up_lst.append(y_up)
+        out, correspondence = tf.concat(y_up_lst, axis=0), tf.concat(y_lst, axis=0)
+        out.set_shape([batch_size, src_shape[1], src_shape[2], src_shape[3]])
+    
+        # if dtype == tf.float32: skip this check
+        # skip flow computation
+        # not used in model
+        return out, correspondence
 
 
 
@@ -180,6 +214,7 @@ class generator(keras.models.Model):
         xnow = keras.layers.concatenate([img_input, mask_input], axis=3) # (512, 512, 4)
         activations = [img_input]
         # encoder
+        sz = self.input_shape[0][0]
         sz_t = self.input_shape[0][0]
         x = xnow
         channelNum = self.GEN_NC
@@ -208,9 +243,22 @@ class generator(keras.models.Model):
         # attention
         # not done yet
         mask_s = mask_input
-        x, match, _ = apply_contextual_attention(x, mask_s, method=config.ATTENTION_TYPE, 
-                                                 name='re_att_' + str(sz_t), dtype=dtype, conv_func=conv2)
+        x, match = contextual_attention_block(x, mask_s, method=self.config.ATTENTION_TYPE,
+                                                 name='re_att_' + str(sz_t), dtype=self.dtype)
 
+        # decoder
+        activations.pop(-1)
+        while sz_t < sz//2:
+            channelNum = channelNum//2
+            sz_t *= 2
+            x = gen_deconv_gated_ds(output_dim=channelNum, kernel_size=3, strides=2, rate=1, padding='SAME', name="decode_up_"+str(sz_t))(x)
+            shortCut = x
+            x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="decode_conv_"+str(sz_t))(x)
+            x = keras.layers.add([shortCut, x])
+            # x_att = apply_attention(x, activations.pop(-1), method=self.config.ATTENTION_TYPE, name='att_' + str(sz_t), dtype=self.dtype)
+
+
+        
 
 
                 
