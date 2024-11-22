@@ -1,7 +1,7 @@
 #TRAIN_LIST: '/data/HDFill/data/places2/train.list'
 #VAL_LIST: '/data/HDFill/data/places2/val.list'
 #TEST_LIST: '/data/HDFill/data/places2/val.list'
-TRAIN_PATH: "/storage/LoFTR/results_british_50"
+TRAIN_PATH: "./MyData/train"
 VAL_PATH: "/storage/LoFTR/resultsV_british_50"
 TEST_LIST: "./data/examples/val.list"
 mask_template_dir: "mask_templates/"
@@ -28,10 +28,4 @@ L1_LOSS_ALPHA: 1.2
 AE_LOSS_ALPHA: 1.2
 GAN_WITH_MASK: False
 
-GPU_ID: [0]
-TRAIN_SPE: 30000
-VAL_PSTEPS: 2000
 MAX_ITERS: 1000
-VIZ_MAX_OUT: 10
-VAL: True
-N_THREADS: 1

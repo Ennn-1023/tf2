@@ -1,11 +1,11 @@
 
 
 import tensorflow as tf
-from .layers import Discriminator_block, gen_conv, gen_deconv, gen_deconv_gated, gen_conv_gated, gen_conv_gated_ds, \
+from layers import Discriminator_block, gen_conv, gen_deconv, gen_deconv_gated, gen_conv_gated, gen_conv_gated_ds, \
     gen_deconv_gated_ds, gen_conv_gated_slice, gen_deconv_gated_slice, dilate_block2, apply_contextual_attention, \
     apply_attention
 
-from .generator import Generator
+from generator import Generator
 
 def get_conv_op(conv_type):
     #gen_conv = ops.GenConvGated()
@@ -30,7 +30,7 @@ def get_conv_op(conv_type):
 class MyModel:
     def __init__(self, name, config=None):
         self.name = name
-        self.generator = Generator(input_shape=config.IMG_SHAPE[0:2], config=config)
+        self.generator = Generator(in_shape=config.IMG_SHAPE[0:2], config=config)
         self.discriminator = self.build_discriminator()
 
 

@@ -61,20 +61,20 @@ def load_data(image_path, image_size = (512, 512), batch_size = 4):
     dataset = dataset.map(lambda orig, mask, fixed: {'original_images': orig, 'masks': mask, 'fixed_images': fixed})
     dataset = dataset.map(preprocess_data)
     dataset = dataset.prefetch(buffer_size = tf.data.experimental.AUTOTUNE)
-    dataset = dataset.shuffle(buffer_size = 4000).batch(batch_size, drop_remainder = True)
+    dataset = dataset.shuffle(buffer_size = 3000).batch(batch_size, drop_remainder = True)
 
     return dataset
 
 
 def preprocess_data(data):
     """
-    預處理函數，將資料集中每個元素的遮罩圖像轉換為二值圖像。
+    pre-process function, convert the mask matrix to binary values.
     
-    參數:
-        data: dict, 包含原始圖像、遮罩圖像和修復後圖像的字典。
+    Arguments:
+        data: dict, a dictionary containing the original image, mask image, and fixed image.
     
-    返回:
-        dict, 預處理過的字典，遮罩圖像已經被轉換為二值圖像。
+    Return:
+        dict, with binary mask image.
     """
     data['original_images'] = data['original_images'] / 127.5 - 1.0
     data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks

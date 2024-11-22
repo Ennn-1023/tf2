@@ -235,9 +235,9 @@ class Attention_layer(keras.layers.Layer):
 
 # define the generator model
 class Generator(keras.models.Model):
-    def __init__(self, input_shape=[512, 512], config=None):
+    def __init__(self, in_shape=[512, 512], config=None):
         super().__init__()
-        self.input_shape = [input_shape.copy().append(3), input_shape.copy().append(1)]
+        self.input_shp = [in_shape.copy().append(3), in_shape.copy().append(1)]
         self.config = config
 
     def call(self, input, training=True):
