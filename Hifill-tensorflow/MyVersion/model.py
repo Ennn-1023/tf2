@@ -37,7 +37,7 @@ class MyModel:
         Build the generator model
         """
         # conv and deconv for refine network
-        conv2, deconv2 = get_conv_op(config.REFINE_CONV_TYPE)
+        conv2, deconv2 = gen_conv_gated_ds, gen_deconv_gated_ds
         sz = config.IMG_SHAPE[1]
         nc = config.GEN_NC
 

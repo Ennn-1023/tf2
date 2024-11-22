@@ -35,20 +35,22 @@ class gen_conv_gated_ds(keras.layers.Layer): # done
         return output
 class gen_deconv_gated_ds(keras.layers.Layer):
     def __init__(self, output_dim, kernel_size, strides=1, rate=1, padding='SAME'
-                 , activation=None, trainable=True, name='gated_deconv', dtype=tf.float32, **kwargs):
+                 , trainable=True, name='gated_deconv', dtype=tf.float32, **kwargs):
         super(gen_deconv_gated_ds, self).__init__(trainable, name, dtype, **kwargs)
         self.output_dim = output_dim
         self.kernel_size = kernel_size
         self.strides = strides
         self.rate = rate
         self.padding = padding
-        self.activation = activation
         self.trainable = trainable
         self.name = name
         self.dtype = dtype
     def call(self, input):
-        raise NotImplementedError
-
+        input_shape = input.get_shape().as_list()
+        # resize input
+        x = keras.layers.Resizing(height=input_shape[1], width=input_shape[2],interpolation='bilinear')(input)
+        x = gen_conv_gated_ds(output_dim=self.output_dim, kernel_size=self.kernel_size, strides=self.strides, rate=self.rate, padding=self.padding, name=self.name)(x)
+        return x
 
 class dilate_block2(keras.layers.Layer): # not checked yet
     def __init__(self, input, output_dim, kernel_size, rate, name='dilate_block2', **kwargs):
@@ -159,14 +161,17 @@ class contextual_attention(keras.layers.Layer): # not checked yet
         for x, ref_feat, raw_ref_feat, mask in zip(src_lst, features_lst, raw_features_lst, mask_lst):
             ref_feat = ref_feat[0]
             ref_feat = tf.divide(ref_feat, tf.maximum(tf.reduce_sum(tf.square(ref_feat), axis=[0, 1, 2]), 1e-8))
-            y = keras.layers.Conv2D(ref_feat, kernel_size=3, strides=(1,1), padding='SAME')(x)
+            # y = keras.layers.Conv2D(ref_feat, kernel_size=3, strides=(1,1), padding='SAME')(x)
+            y = tf.nn.conv2d(x, ref_feat, strides=(1,1), padding='SAME')
             if self.fuse:
                 yi = keras.layers.Reshape([ss[1]*ss[2], rs[1]*rs[2], 1])(y)
-                yi = keras.layers.Conv2D(filters=fuse_weight, strides=(1,1), padding='SAME')(yi)
+                # yi = keras.layers.Conv2D(filters=fuse_weight, strides=(1,1), padding='SAME')(yi)
+                yi = tf.nn.conv2d(yi, fuse_weight, strides=(1,1), padding='SAME')
                 yi = keras.layers.Reshape([ss[1], ss[2], rs[1], rs[2]])(yi)
                 yi = keras.layers.Permute([2, 1, 4, 3])(yi)
                 yi = keras.layers.Reshape([ss[1]*ss[2], rs[1]*rs[2]], 1)(yi)
-                yi = keras.layers.Conv2D(filters=fuse_weight, strides=(1,1), padding='SAME')(yi)
+                # yi = keras.layers.Conv2D(filters=fuse_weight, strides=(1,1), padding='SAME')(yi)
+                yi = tf.nn.conv2d(yi, fuse_weight, strides=(1,1), padding='SAME')
                 yi = keras.layers.Reshape([ss[2], ss[1], rs[2], rs[1]])(yi)
                 yi = keras.layers.Permute([2, 1, 4, 3])(yi)
                 y = yi
@@ -185,7 +190,6 @@ class contextual_attention(keras.layers.Layer): # not checked yet
                 offset = tf.argmax(y, axis=3, output_type=tf.float32)
                 offsets.append(offset)
             feats = raw_ref_feat[0]
-            # y_up = tf.nn.conv2d_transpose
             y_up =  tf.nn.conv2d_transpose(y, feats, output_shape=src_shape[1:], strides=(1, rate, rate, 1), padding='SAME')
             y_lst.append(y)
             y_up_lst.append(y_up)
@@ -197,8 +201,36 @@ class contextual_attention(keras.layers.Layer): # not checked yet
         # not used in model
         return out, correspondence
 
+class Attention_layer(keras.layers.Layer):
+    def __init__(self, method, name='attention', dtype=tf.float32, **kwargs):
+        super(Attention_layer, self).__init__(name=name, dtype=dtype, **kwargs)
+        self.method = method
+        self.name = name
+        self.dtype = dtype
+    def call(self, input):
+        x_shape = input[0].get_shape().as_list()
+        corres_shape = input[1].get_shape().as_list()
+        rate = x_shape[1]// corres_shape[1]
+        kernel = rate*2
+        channelNum = x_shape[3]
 
+        raw_feat = tf.image.extract_patches(input[0], sizes=[1, kernel, kernel, 1], 
+                                            strides=[1, rate, rate, 1], rates=[1, 1, 1, 1], padding='SAME')
+        raw_feat = keras.layers.Reshape([-1, kernel, kernel, channelNum])(raw_feat)
+        raw_feat = keras.layers.Permute([2, 3, 4, 1])(raw_feat)
+        raw_feat_lst = tf.split(raw_feat, num_or_size_splits=x_shape[0], axis=0) # split along batch axis
 
+        y_score = []
+        att_lst = tf.split(input[1], num_or_size_splits=x_shape[0], axis=0) # split along batch axis
+        for feat, att in zip(raw_feat_lst, att_lst):
+            y = tf.nn.conv2d_transpose(att, feat[0], [1] + x_shape[1:], strides=[1, rate, rate, 1], padding='SAME')
+            y_score.append(y)
+        out = tf.concat(y_score, axis=0)
+
+        out = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="att_decoder_conv_1")(out)
+        out = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="att_decoder_conv_2")(out)
+
+        return out
 
 
 # define the generator model
@@ -255,8 +287,12 @@ class generator(keras.models.Model):
             shortCut = x
             x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="decode_conv_"+str(sz_t))(x)
             x = keras.layers.add([shortCut, x])
-            # x_att = apply_attention(x, activations.pop(-1), method=self.config.ATTENTION_TYPE, name='att_' + str(sz_t), dtype=self.dtype)
-
+            x_att = Attention_layer(activations.pop(-1), match, method=self.config.ATTENTION_TYPE, dtype=self.dtype)
+            x = keras.layers.concatenate([x_att, x], axis=3)
+        # decode to RGB 3 channels
+        x = gen_deconv_gated_ds(output_dim=3, kernel_size=3, strides=1, rate=1, padding='SAME', name="decode_final")(x)
+        x2 = tf.clip_by_value(x, -1.0, 1.0)
+        return x2
 
         
 
