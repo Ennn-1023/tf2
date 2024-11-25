@@ -227,12 +227,14 @@ class contextual_attention(keras.layers.Layer): # not checked yet
         # return out, correspondence
 
 class Attention_layer(keras.layers.Layer):
-    def __init__(self, method, name='attention', dtype=tf.float32, **kwargs):
+    def __init__(self, dim, method, name='attention', dtype=tf.float32, **kwargs):
         super(Attention_layer, self).__init__(name=name, dtype=dtype, **kwargs)
         self.method = method
-    def call(self, inputs):
-        x_shape = inputs[0].get_shape().as_list()
-        corres_shape = inputs[1].get_shape().as_list()
+        self.name = name
+        self.dtype = dtype
+    def call(self, input):
+        x_shape = input[0].get_shape().as_list()
+        corres_shape = input[1].get_shape().as_list()
         rate = x_shape[1]// corres_shape[1]
         kernel = rate*2
         channelNum = x_shape[3]
@@ -250,61 +252,11 @@ class Attention_layer(keras.layers.Layer):
             y_score.append(y)
         out = tf.concat(y_score, axis=0)
 
-        out = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="att_decoder_conv_1")(out)
-        out = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="att_decoder_conv_2")(out)
+        out = self.AttDecodeConv1(out)
+        out = self.AttDecodeConv2(out)
 
         return out
 
-def Build_Generator(input_shp=(512, 512), config=None, dtype=tf.float32):
-    img_input = keras.layers.Input(shape=(input_shp[0], input_shp[1], 3), batch_size=config.BATCH_SIZE)
-    mask_input = keras.layers.Input(shape=(input_shp[0], input_shp[1], 1), batch_size=config.BATCH_SIZE)
-    xnow = keras.layers.concatenate([img_input, mask_input], axis=3) # (512, 512, 4)
-    activations = [img_input]
-    # encoder
-    sz = input_shp[0]
-    sz_t = input_shp[0]
-    x = xnow
-    channelNum = config.GEN_NC
-    channelNum = max(4, channelNum // (sz_t // 512)) // 2
-    while sz_t > config.BOTTLENECK_SIZE:
-        channelNum *= 2
-        sz_t //= 2
-        # kkernal = 5 if sz_t == self.input_shape[0][0] else 3
-        # 檢查一下這行原本有沒有用到
-        x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=2, rate=1, padding='SAME', name="encoder_down_"+str(sz_t))(x)
-        shortCut = x
-        x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="encoder_conv_"+str(sz_t))(x)
-        # apply residual
-        x = keras.layers.add([shortCut, x])
-        activations.append(x)
-    
-    # dilated conv
-    # not done yet
-    # x = dilate_block2(x, channelNum, 3, rate=1, name='re_en_dilated_1')
-    x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="dilated_1")(x)
-    x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=2, padding='SAME', name="dilated_2")(x)
-    x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=4, padding='SAME', name="dilated_4")(x)
-    x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=8, padding='SAME', name="dilated_8")(x)
-    x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=16, padding='SAME', name="dilated_16")(x)
-    # attention
-    # not done yet
-    mask_s = mask_input
-    x, match = contextual_attention_block(x.get_shape().as_list()[-1], method=config.ATTENTION_TYPE, name='att_score' + str(sz_t), dtype=dtype)([x, mask_s])
-    # decoder
-    activations.pop(-1)
-    while sz_t < sz//2:
-        channelNum = channelNum//2
-        sz_t *= 2
-        x = gen_deconv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="decode_up_"+str(sz_t))(x)
-        x = gen_conv_gated_ds(output_dim=channelNum, kernel_size=3, strides=1, rate=1, padding='SAME', name="decode_conv_"+str(sz_t))(x)
-        x_att = Attention_layer(method=config.ATTENTION_TYPE, dtype=dtype, name='att_decode'+str(sz_t))([activations.pop(-1), match])
-        # att 裡面 dim有錯
-        print("x_att shape: ", x_att.get_shape().as_list())
-        x = keras.layers.concatenate([x_att, x], axis=3)
-    # decode to RGB 3 channels
-    x = gen_deconv_gated_ds(output_dim=3, kernel_size=3, strides=1, rate=1, padding='SAME', name="decode_final")(x)
-    x2 = tf.clip_by_value(x, -1.0, 1.0)
-    return keras.models.Model(inputs=[img_input, mask_input], outputs=x2)
 
 # define the generator model
 class Generator(keras.models.Model):
