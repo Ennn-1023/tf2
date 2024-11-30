@@ -58,9 +58,11 @@ class MyModel:
             sz_t //= 2
             kkernal = 5 if sz_t == sz else 3
             x = conv2(x, nc, 3, 2, name='re_en_down_' + str(sz_t))
+            short_cut = x
             x = conv2(x, nc, 3, 1, rate=1, name='re_en_conv_' + str(sz_t))
+            x = tf.keras.layers.add([short_cut, x])
+            x = tf.keras.layers.ReLU()(x)
             # residual block
-            x = residual_block(x, nc, name='re_en_res_' + str(sz_t), conv_func=conv2)
             activations.append(x)
         
         # nc = 128
