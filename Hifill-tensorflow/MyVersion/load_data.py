@@ -116,20 +116,20 @@ def load_data(image_path, image_size = (512, 512), batch_size = 4):
     return dataset
 
 
-def preprocess_data(data):
-    """
-    預處理函數，將資料集中每個元素的遮罩圖像轉換為二值圖像。
+# def preprocess_data(data):
+#     """
+#     預處理函數，將資料集中每個元素的遮罩圖像轉換為二值圖像。
     
-    參數:
-        data: dict, 包含原始圖像、遮罩圖像和修復後圖像的字典。
+#     參數:
+#         data: dict, 包含原始圖像、遮罩圖像和修復後圖像的字典。
     
-    返回:
-        dict, 預處理過的字典，遮罩圖像已經被轉換為二值圖像。
-    """
-    data['original_images'] = data['original_images'] / 127.5 - 1.0
-    data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
-    data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
-    return data
+#     返回:
+#         dict, 預處理過的字典，遮罩圖像已經被轉換為二值圖像。
+#     """
+#     data['original_images'] = data['original_images'] / 127.5 - 1.0
+#     data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
+#     data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
+#     return data
 
 def convert_mask(mask):
     """
