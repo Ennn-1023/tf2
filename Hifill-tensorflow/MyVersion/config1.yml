@@ -3,6 +3,7 @@
 #TEST_LIST: '/data/HDFill/data/places2/val.list'
 TRAIN_PATH: "/storage/LoFTR/results_british_50"
 VAL_PATH: "/storage/LoFTR/resultsV_british_50"
+FROM_CSV: True
 TEST_LIST: "./data/examples/val.list"
 mask_template_dir: "mask_templates/"
 CONTINUE_TRAIN: False

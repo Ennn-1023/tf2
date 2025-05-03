@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     model = MyModel("Mymodel", config)
     # get dataset
-    train_ds = load_data.create_dataset(config.TRAIN_PATH, config.IMG_SHAPE, config.BATCH_SIZE)
+    train_ds = load_data.create_dataset(config.TRAIN_PATH, config.IMG_SHAPE, config.BATCH_SIZE, config.FROM_CSV)
     print('train_ds', train_ds.element_spec)
     # model.generator.build(input_shape=(config.BATCH_SIZE, 512, 512, 3))
     # model.generator.summary()
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     log_path = './train_log'
     # trainer = Trainer(model, config, dir_path)
     trainer = Trainer(model, config)
-    trainer.train(train_ds, epochs=config.MAX_ITERS, dir_path=dir_path, log_path=log_path,continue_training=config.CONTINUE_TRAIN)
+    trainer.train(train_ds, epochs=config.MAX_ITERS, dir_path=dir_path, log_path=log_path, continue_training=config.CONTINUE_TRAIN)
     # batch size 調整
     # 同一地點的圖片 training
     # 用相同做test
