@@ -27,6 +27,18 @@ def preprocess_data(data):
     返回:
         dict, 預處理過的字典，遮罩圖像已經被轉換為二值圖像。
     """
+    data['original_images'] = tf.io.read_file(data['original_images'])
+    data['original_images'] = tf.image.decode_jpeg(data['original_images'], channels=3)
+    data['original_images'] = tf.image.resize(data['original_images'], (512, 512))
+
+    data['masks'] = tf.io.read_file(data['masks'])
+    data['masks'] = tf.image.decode_jpeg(data['masks'], channels=1)
+    data['masks'] = tf.image.resize(data['masks'], (512, 512))
+    
+    data['fixed_images'] = tf.io.read_file(data['fixed_images'])
+    data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
+    data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
+
     data['original_images'] = data['original_images'] / 127.5 - 1.0
     data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
     data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
