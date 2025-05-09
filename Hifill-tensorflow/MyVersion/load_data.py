@@ -10,9 +10,9 @@ import os
 import matplotlib.pyplot as plt
 
 
-def create_dataset(dir_path, image_size, batch_size, from_csv=False, train=True):
+def create_dataset(dir_path, image_size, batch_size, key='train', from_csv=False, train=True):
     if from_csv:
-        dataset = load_data_from_csv(dir_path, image_size[0:2], batch_size, train=train)
+        dataset = load_data_from_csv(dir_path, image_size[0:2], batch_size, key=key, train=train)
     else:
         dataset = load_data(dir_path, image_size[0:2], batch_size)
     return dataset

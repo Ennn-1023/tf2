@@ -83,7 +83,7 @@ if __name__ == "__main__":
     
     model = InferenceModel(config_path=opt.config, weights_path=opt.weight)
     # load dataset
-    input_ds = load_data.create_dataset(opt.input, (512, 512), 1, from_csv=True, train=False)
+    input_ds = load_data.create_dataset(opt.input, (512, 512), 1, key='validation', from_csv=True, train=False)
     # create output dir if not exist
     if not os.path.exists(opt.output):
         os.makedirs(opt.output)
