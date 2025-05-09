@@ -16,9 +16,6 @@ def load_yml(path):
 
 
 
-
-
-
 if __name__ == "__main__":
     # load config.yml file
     config = load_yml('MyVersion/config1.yml')

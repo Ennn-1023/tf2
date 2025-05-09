@@ -10,14 +10,14 @@ import os
 import matplotlib.pyplot as plt
 
 
-def create_dataset(dir_path, image_size, batch_size, from_csv=False):
+def create_dataset(dir_path, image_size, batch_size, from_csv=False, train=True):
     if from_csv:
-        dataset = load_data_from_csv(dir_path, image_size[0:2], batch_size)
+        dataset = load_data_from_csv(dir_path, image_size[0:2], batch_size, train=train)
     else:
         dataset = load_data(dir_path, image_size[0:2], batch_size)
     return dataset
 
-def preprocess_data(data):
+def preprocess_train_data(data):
     """
     預處理函數，將資料集中每個元素的遮罩圖像轉換為二值圖像。
     
@@ -44,7 +44,19 @@ def preprocess_data(data):
     data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
     return data
 
-def load_data_from_csv(csv_path, image_size = (512, 512), batch_size = 4, key='train'):
+def preprocess_infer_data(data):
+    data['masks'] = tf.io.read_file(data['masks'])
+    data['masks'] = tf.image.decode_jpeg(data['masks'], channels=1)
+    data['masks'] = tf.image.resize(data['masks'], (512, 512))
+    data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
+
+    data['fixed_images'] = tf.io.read_file(data['fixed_images'])
+    data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
+    data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
+    data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
+    return data
+
+def load_data_from_csv(csv_path, image_size = (512, 512), batch_size = 4, key='train', train=True):
     """
     從 CSV 文件中加載圖像數據集，並將其轉換為 TensorFlow 數據集格式。
     
@@ -66,15 +78,23 @@ def load_data_from_csv(csv_path, image_size = (512, 512), batch_size = 4, key='t
     mask_paths = df['mask_path'].values
     fixed_paths = df['fixed_path'].values
     data_root = os.path.dirname(csv_path)
+    if train:
+        # 創建 TensorFlow 數據集
+        dataset = tf.data.Dataset.from_tensor_slices(([os.path.join(data_root, l) for l in image_paths], 
+                                                    [os.path.join(data_root, l) for l in mask_paths],
+                                                    [os.path.join(data_root, l) for l in fixed_paths]))
+        dataset = dataset.map(lambda orig, mask, fixed: {'original_images': orig, 'masks': mask, 'fixed_images': fixed})
+        dataset = dataset.map(preprocess_train_data)
+        dataset = dataset.prefetch(buffer_size = tf.data.experimental.AUTOTUNE)
+        dataset = dataset.shuffle(buffer_size = 3000).batch(batch_size, drop_remainder = True)
+    else: # inference mode
+        dataset = tf.data.Dataset.from_tensor_slices(([os.path.join(data_root, l) for l in mask_paths],
+                                                    [os.path.join(data_root, l) for l in fixed_paths],
+                                                    [name for name in image_paths]))
+        dataset = dataset.map(lambda mask, fixed, name: {'masks': mask, 'fixed_images': fixed, 'image_name': name})
+        dataset = dataset.map(preprocess_infer_data)
+        dataset = dataset.batch(batch_size, drop_remainder = True)
 
-    # 創建 TensorFlow 數據集
-    dataset = tf.data.Dataset.from_tensor_slices(([os.path.join(data_root, l) for l in image_paths], 
-                                                  [os.path.join(data_root, l) for l in mask_paths],
-                                                  [os.path.join(data_root, l) for l in fixed_paths]))
-    dataset = dataset.map(lambda orig, mask, fixed: {'original_images': orig, 'masks': mask, 'fixed_images': fixed})
-    dataset = dataset.map(preprocess_data)
-    dataset = dataset.prefetch(buffer_size = tf.data.experimental.AUTOTUNE)
-    dataset = dataset.shuffle(buffer_size = 3000).batch(batch_size, drop_remainder = True)
 
     return dataset
 
@@ -109,7 +129,7 @@ def load_data(image_path, image_size = (512, 512), batch_size = 4):
     )
     dataset = tf.data.Dataset.zip((origin, mask, fixed))
     dataset = dataset.map(lambda orig, mask, fixed: {'original_images': orig, 'masks': mask, 'fixed_images': fixed})
-    dataset = dataset.map(preprocess_data)
+    dataset = dataset.map(preprocess_train_data)
     dataset = dataset.prefetch(buffer_size = tf.data.experimental.AUTOTUNE)
     dataset = dataset.shuffle(buffer_size = 3000).batch(batch_size, drop_remainder = True)
 
