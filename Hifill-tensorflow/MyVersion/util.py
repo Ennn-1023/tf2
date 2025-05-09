@@ -79,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--weight', type=str, default='model_weight/generator', help='Path to the weights file')
     parser.add_argument('-i', '--input', type=str, help='Path to the input dir')
     parser.add_argument('-o', '--output', type=str, help='Path to the output dir')
-    opt = parser.parse_known_args()
+    opt, _ = parser.parse_known_args()
     
     model = InferenceModel(config_path=opt.config, weights_path=opt.weight)
     # load dataset
