@@ -54,6 +54,8 @@ def preprocess_infer_data(data):
     data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
     data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
     data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
+
+    data['image_name'] = data['image_name']
     return data
 
 def load_data_from_csv(csv_path, image_size = (512, 512), batch_size = 4, key='train', train=True):
