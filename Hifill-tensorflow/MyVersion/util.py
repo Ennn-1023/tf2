@@ -3,7 +3,7 @@ import tensorflow as tf
 from model import MyModel
 import load_data
 import argparse
-import tqdm
+from tqdm import tqdm
 from easydict import EasyDict as edict
 import yaml
 import os
