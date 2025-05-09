@@ -50,7 +50,7 @@ class InferenceModel:
         assert config_path is not None, 'config_path should not be None'
         assert weights_path is not None, 'weights_path should not be None'
         self.config = load_yml(config_path)
-        self.model = MyModel(model_name, config)
+        self.model = MyModel(model_name, self.config)
         self._load_model(weights_path)
 
     def _load_model(self, weights_path):
