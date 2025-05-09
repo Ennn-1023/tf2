@@ -69,7 +69,7 @@ class InferenceModel:
                     img = (img + 1) * 127.5
                     img = img.astype('uint8')
                     filename = image_batch['image_name'][i].numpy().decode('utf-8')
-                    cv2.imwrite(os.path.join(output_dir, filename), img)
+                    cv2.imwrite(os.path.join(output_dir, filename), cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
                 pbar.update(1)
         
         print("Inference completed. Generated images saved to:", output_dir)
