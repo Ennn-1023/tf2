@@ -46,10 +46,11 @@ def generate_and_save_images(model, test_input):
         plt.show()
 
 class InferenceModel:
-    def __init__(self, model_name='InferenceModel', config_path=None, weights_path=None):
+    def __init__(self, model_name='InferenceModel', config_path=None, weights_path=None, batch_size=1):
         assert config_path is not None, 'config_path should not be None'
         assert weights_path is not None, 'weights_path should not be None'
         self.config = load_yml(config_path)
+        self.config.BATCH_SIZE = batch_size
         self.model = MyModel(model_name, self.config)
         self._load_model(weights_path)
 
@@ -79,9 +80,10 @@ if __name__ == "__main__":
     parser.add_argument('-w', '--weight', type=str, default='model_weight/generator', help='Path to the weights file')
     parser.add_argument('-i', '--input', type=str, help='Path to the input dir')
     parser.add_argument('-o', '--output', type=str, help='Path to the output dir')
+    parser.add_argument('-b', '--batch_size', type=int, default=1, help='Batch size for inference')
     opt, _ = parser.parse_known_args()
     
-    model = InferenceModel(config_path=opt.config, weights_path=opt.weight)
+    model = InferenceModel(config_path=opt.config, weights_path=opt.weight, batch_size=opt.batch_size)
     # load dataset
     input_ds = load_data.create_dataset(opt.input, (512, 512), 1, key='validation', from_csv=True, train=False)
     # create output dir if not exist
