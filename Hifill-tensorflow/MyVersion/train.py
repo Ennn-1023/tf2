@@ -4,6 +4,7 @@ import tensorflow as tf
 from model import MyModel
 from trainer import Trainer
 import load_data
+import os
 
 def load_yml(path):
     with open(path, 'r') as f:
@@ -57,18 +58,18 @@ if __name__ == "__main__":
 
     model = MyModel("Mymodel", config)
     # get dataset
-    train_ds = load_data.create_dataset(config.TRAIN_PATH, config.IMG_SHAPE, config.BATCH_SIZE, config.FROM_CSV)
+    train_ds = load_data.create_dataset(config.TRAIN_PATH, config.IMG_SHAPE, config.BATCH_SIZE, from_csv=config.FROM_CSV, key='train')
     print('train_ds', train_ds.element_spec)
     # model.generator.build(input_shape=(config.BATCH_SIZE, 512, 512, 3))
     # model.generator.summary()
     # model.discriminator.summary()
     # def weight path
-    dir_path = './model_weight'
+    dir_path = './weights/' + 'mult2_v4'
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
+    
     log_path = './train_log'
     # trainer = Trainer(model, config, dir_path)
     trainer = Trainer(model, config)
     trainer.train(train_ds, epochs=config.MAX_ITERS, dir_path=dir_path, log_path=log_path, continue_training=config.CONTINUE_TRAIN)
-    # batch size 調整
-    # 同一地點的圖片 training
-    # 用相同做test
-    # 印出 discrimnator accuracy
+    
