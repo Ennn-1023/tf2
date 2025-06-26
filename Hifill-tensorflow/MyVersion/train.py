@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # model.generator.summary()
     # model.discriminator.summary()
     # def weight path
-    dir_path = './weights/' + 'mult2_v4'
+    dir_path = './weights/' + 'mult2_v4_white'
     if not os.path.exists(dir_path):
         os.makedirs(dir_path, exist_ok=True)
     
