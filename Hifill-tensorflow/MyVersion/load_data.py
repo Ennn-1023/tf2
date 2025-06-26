@@ -17,7 +17,7 @@ def create_dataset(dir_path, image_size, batch_size, key='train', from_csv=False
         dataset = load_data(dir_path, image_size[0:2], batch_size)
     return dataset
 
-def preprocess_train_data(data):
+def preprocess_train_data(data, inpainted=False):
     """
     預處理函數，將資料集中每個元素的遮罩圖像轉換為二值圖像。
     
@@ -30,18 +30,23 @@ def preprocess_train_data(data):
     data['original_images'] = tf.io.read_file(data['original_images'])
     data['original_images'] = tf.image.decode_jpeg(data['original_images'], channels=3)
     data['original_images'] = tf.image.resize(data['original_images'], (512, 512))
+    data['original_images'] = data['original_images'] / 127.5 - 1.0
 
     data['masks'] = tf.io.read_file(data['masks'])
     data['masks'] = tf.image.decode_jpeg(data['masks'], channels=1)
     data['masks'] = tf.image.resize(data['masks'], (512, 512))
-    
-    data['fixed_images'] = tf.io.read_file(data['fixed_images'])
-    data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
-    data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
-
-    data['original_images'] = data['original_images'] / 127.5 - 1.0
     data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
-    data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
+    
+    if inpainted:
+        data['fixed_images'] = tf.io.read_file(data['fixed_images'])
+        data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
+        data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
+        data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
+    else:
+        inverted_mask = 1.0 - data['masks']  # 把 1->0, 0->1，讓 1 表示保留
+        data['fixed_images'] = data['original_images'] * inverted_mask  # broadcasting 自動處理 channel
+
+    
     return data
 
 def preprocess_infer_data(data):
