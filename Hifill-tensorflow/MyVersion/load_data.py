@@ -54,14 +54,13 @@ def preprocess_infer_data(data, block=False):
     data['masks'] = tf.image.decode_jpeg(data['masks'], channels=1)
     data['masks'] = tf.image.resize(data['masks'], (512, 512))
     data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
-    if not block:
-        data['fixed_images'] = tf.io.read_file(data['fixed_images'])
-        data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
-        data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
-        data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
-    else:
+    data['fixed_images'] = tf.io.read_file(data['fixed_images'])
+    data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
+    data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
+    data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
+    if block:
         inverted_mask = 1.0 - data['masks']  # 把 1->0, 0->1，讓 1 表示保留
-        data['fixed_images'] = data['original_images'] * inverted_mask  # broadcasting 自動處理 channel
+        data['fixed_images'] = data['fixed_images'] * inverted_mask  # broadcasting 自動處理 channel
 
     data['image_name'] = data['image_name']
     return data
