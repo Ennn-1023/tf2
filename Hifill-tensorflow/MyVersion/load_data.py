@@ -39,7 +39,10 @@ def preprocess_train_data(data, inpainted=False, random_null=False):
     data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
     
     if inpainted:
-        is_null = random.random() < 0.2  # 隨機決定是否使用 coarsely inpainted area
+        if random_null:
+            is_null = random.random() < 0.2  # 隨機決定是否使用 coarsely inpainted area
+        else:
+            is_null = False
         if is_null:
             inverted_mask = 1.0 - data['masks']  # 把 1->0, 0->1，讓 1 表示保留
             data['fixed_images'] = data['original_images'] * inverted_mask  # broadcasting 自動處理 channel
