@@ -101,7 +101,7 @@ def load_data_from_csv(csv_path, image_size = (512, 512), batch_size = 4, key='t
                                                     [os.path.join(data_root, l) for l in mask_paths],
                                                     [os.path.join(data_root, l) for l in fixed_paths]))
         dataset = dataset.map(lambda orig, mask, fixed: {'original_images': orig, 'masks': mask, 'fixed_images': fixed})
-        dataset = dataset.map(lambda data: preprocess_train_data(x, inpainted=not block, random_null=random_null))
+        dataset = dataset.map(lambda data: preprocess_train_data(data, inpainted=not block, random_null=random_null))
         dataset = dataset.prefetch(buffer_size = tf.data.experimental.AUTOTUNE)
         dataset = dataset.shuffle(buffer_size = 3000).batch(batch_size, drop_remainder = True)
     else: # inference mode

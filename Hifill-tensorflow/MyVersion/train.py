@@ -72,5 +72,5 @@ if __name__ == "__main__":
     log_path = './train_log'
     # trainer = Trainer(model, config, dir_path)
     trainer = Trainer(model, config)
-    trainer.train(train_ds, epochs=config.MAX_ITERS, dir_path=dir_path, log_path=log_path, continue_training=config.CONTINUE_TRAIN)
+    trainer.train(train_ds, epochs=config.MAX_ITERS, dir_path=dir_path, log_path=log_path, continue_training=config.CONTINUE_TRAIN, weight_path=config.WEIGHT_PATH)
     
