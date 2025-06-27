@@ -82,11 +82,12 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--input', type=str, help='Path to the input dir')
     parser.add_argument('-o', '--output', type=str, help='Path to the output dir')
     parser.add_argument('-b', '--batch_size', type=int, default=1, help='Batch size for inference')
+    parser.add_argument('-B', '--block', type=bool, default=False, help='Block the coarsely inpainted area or not')
     opt, _ = parser.parse_known_args()
     
     model = InferenceModel(config_path=opt.config, weights_path=opt.weight, batch_size=opt.batch_size)
     # load dataset
-    input_ds = load_data.create_dataset(opt.input, (512, 512), 1, key='validation', from_csv=True, train=False)
+    input_ds = load_data.create_dataset(opt.input, (512, 512), 1, key='validation', from_csv=True, train=False, block=opt.block)
     # create output dir if not exist
     if not os.path.exists(opt.output):
         os.makedirs(opt.output)
