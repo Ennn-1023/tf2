@@ -58,7 +58,8 @@ if __name__ == "__main__":
 
     model = MyModel("Mymodel", config)
     # get dataset
-    train_ds = load_data.create_dataset(config.TRAIN_PATH, config.IMG_SHAPE, config.BATCH_SIZE, from_csv=config.FROM_CSV, key='train')
+    train_ds = load_data.create_dataset(config.TRAIN_PATH, config.IMG_SHAPE, config.BATCH_SIZE,
+                                         from_csv=config.FROM_CSV, key='train', random_null=config.RANDOM_NULL)
     print('train_ds', train_ds.element_spec)
     # model.generator.build(input_shape=(config.BATCH_SIZE, 512, 512, 3))
     # model.generator.summary()

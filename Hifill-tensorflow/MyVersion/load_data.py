@@ -1,4 +1,5 @@
 import os
+import random
 import tensorflow as tf
 import cv2
 import pandas as pd
@@ -10,14 +11,14 @@ import os
 import matplotlib.pyplot as plt
 
 
-def create_dataset(dir_path, image_size, batch_size, key='train', from_csv=False, train=True, block=False):
+def create_dataset(dir_path, image_size, batch_size, key='train', from_csv=False, train=True, block=False, random_null=False):
     if from_csv:
-        dataset = load_data_from_csv(dir_path, image_size[0:2], batch_size, key=key, train=train, block=block)
+        dataset = load_data_from_csv(dir_path, image_size[0:2], batch_size, key=key, train=train, block=block, random_null=random_null)
     else:
         dataset = load_data(dir_path, image_size[0:2], batch_size)
     return dataset
 
-def preprocess_train_data(data, inpainted=False):
+def preprocess_train_data(data, inpainted=False, random_null=False):
     """
     預處理函數，將資料集中每個元素的遮罩圖像轉換為二值圖像。
     
@@ -38,10 +39,16 @@ def preprocess_train_data(data, inpainted=False):
     data['masks'] = convert_mask(data['masks'])  # Apply convert_mask to the masks
     
     if inpainted:
-        data['fixed_images'] = tf.io.read_file(data['fixed_images'])
-        data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
-        data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
-        data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
+        is_null = random.random() < 0.2  # 隨機決定是否使用 coarsely inpainted area
+        if is_null:
+            inverted_mask = 1.0 - data['masks']  # 把 1->0, 0->1，讓 1 表示保留
+            data['fixed_images'] = data['original_images'] * inverted_mask  # broadcasting 自動處理 channel
+        else:
+            data['fixed_images'] = tf.io.read_file(data['fixed_images'])
+            data['fixed_images'] = tf.image.decode_jpeg(data['fixed_images'], channels=3)
+            data['fixed_images'] = tf.image.resize(data['fixed_images'], (512, 512))
+            data['fixed_images'] = data['fixed_images'] / 127.5 - 1.0
+
     else:
         inverted_mask = 1.0 - data['masks']  # 把 1->0, 0->1，讓 1 表示保留
         data['fixed_images'] = data['original_images'] * inverted_mask  # broadcasting 自動處理 channel
@@ -65,7 +72,7 @@ def preprocess_infer_data(data, block=False):
     data['image_name'] = data['image_name']
     return data
 
-def load_data_from_csv(csv_path, image_size = (512, 512), batch_size = 4, key='train', train=True, block=False):
+def load_data_from_csv(csv_path, image_size = (512, 512), batch_size = 4, key='train', train=True, block=False, random_null=False):
     """
     從 CSV 文件中加載圖像數據集，並將其轉換為 TensorFlow 數據集格式。
     
@@ -94,7 +101,7 @@ def load_data_from_csv(csv_path, image_size = (512, 512), batch_size = 4, key='t
                                                     [os.path.join(data_root, l) for l in mask_paths],
                                                     [os.path.join(data_root, l) for l in fixed_paths]))
         dataset = dataset.map(lambda orig, mask, fixed: {'original_images': orig, 'masks': mask, 'fixed_images': fixed})
-        dataset = dataset.map(lambda data: preprocess_train_data(x, inpainted=not block))
+        dataset = dataset.map(lambda data: preprocess_train_data(x, inpainted=not block, random_null=random_null))
         dataset = dataset.prefetch(buffer_size = tf.data.experimental.AUTOTUNE)
         dataset = dataset.shuffle(buffer_size = 3000).batch(batch_size, drop_remainder = True)
     else: # inference mode

@@ -121,7 +121,7 @@ class Trainer:
         self.model.generator.save_weights(path + '/generator')
         self.model.discriminator.save_weights(path + '/discriminator')
 
-    def train(self, train_ds, dir_path, log_path, epochs = 100, continue_training = False):
+    def train(self, train_ds, dir_path, log_path, epochs = 100, continue_training = False, weight_path=None):
         '''
         Train the model
         params:
@@ -134,14 +134,17 @@ class Trainer:
         initial_epoch = 0
         # load the model if continue_training is True
         if continue_training:
+            assert weight_path is not None, 'weight_path should not be None when continue_training is True'
             print('Continue training: \nloading model weights from:', dir_path)
-            path = dir_path + '/weights_epoch_200'
-            self.model.generator.load_weights(path + '/generator')
-            self.model.discriminator.load_weights(path + '/discriminator')
-            initial_epoch = int(path.split('_')[-1])
+            self.model.generator.load_weights(weight_path + '/generator')
+            self.model.discriminator.load_weights(weight_path + '/discriminator')
+            initial_epoch = int(weight_path.split('_')[-1])
+        elif weight_path is not None:
+            print('Loading model weights from:', weight_path)
+            self.model.generator.load_weights(weight_path + '/generator')
+            self.model.discriminator.load_weights(weight_path + '/discriminator')
+            
         setup_logger(log_path)
-
-
         # train the model
         logging.info('Start training...')
         for epoch in range(initial_epoch, epochs):

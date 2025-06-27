@@ -7,9 +7,11 @@ FROM_CSV: True
 TEST_LIST: "./data/examples/val.list"
 mask_template_dir: "mask_templates/"
 CONTINUE_TRAIN: False
+WEIGHT_PATH: "./weights/mult2_v4/weights_epoch_1000"
 MODEL_RESTORE: ""
 LOG_DIR: "./logs"
 RANDOM_CROP: True
+RANDOM_NULL: True
 
 IMG_SHAPE: [512, 512, 3]
 BATCH_SIZE: 4
